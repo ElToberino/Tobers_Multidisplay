@@ -34,11 +34,16 @@ WEATHER: personal api key from [openweathermap.org](https://openweathermap.org/)
 NEWS: personal api key from [newsapi.org/](https://newsapi.org/)<br>
 SPOTIFY: (free or premium) account AND [developer registration of your device](https://developer.spotify.com/dashboard/)<br>
 <br>
+<img src="showcase/public.jpg" width="400"><br>
+<img src="showcase/admin.jpg" width="400"><br>
 <br>
-**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hacktser.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and video there.**
+**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hacktser.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and a video there.**<br>
 
-
-
-
-
-
+**Credits**<br>
+This project wouldn't have been possible without the work of many others:
+* Special thanks to Marco Colli (MajicDesigns) for his libraries, the excellent documentation and the support via arduino forum.
+* Special thanks to Benoit Blanchon for his great Arduino Json Library and his friendly support.
+* Local language concept and some parts of weather functions inspired by ericBcreator and his great display project
+* SPIFFS administration taken and adopted from the great Arduino ESP website https://fipsok.de/ by Jens Fleischer
+* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/
+Thanks to the many, many other programmers and enthusiasts in the web whose work and helpfulness enabled me to realize such a project.
