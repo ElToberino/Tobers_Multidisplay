@@ -1,0 +1,101 @@
+﻿<!-- 
+Tobers Multidisplay by ElToberino (c) 2020
+for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+-->
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-control" content="no-cache">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>OTA</title>
+  <SCRIPT>                 // accept file type: https://stackoverflow.com/questions/11832930/html-input-file-accept-attribute-file-type-csv
+                           //see: https://stackoverflow.com/questions/43708127/javascript-get-the-filename-and-extension-from-input-type-file
+						   //and  https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript/1203361#1203361
+		window.addEventListener('load', () => {
+		once();
+		 })
+		
+		function once() {
+		 
+          fetch('/sketchName')
+			  .then(response => {
+				return response.json()
+				})
+              .then(data => {
+			  
+				document.getElementById("currentName").innerHTML = data.Name;
+				
+				console.log(data)
+				})
+			  .catch(err => {
+				document.getElementById("currentBox").style.background = "red";
+                document.getElementById("currentName").innerHTML = "&nbspSketchname konnte nicht geladen werden!";
+				})
+			}
+                
+		
+		
+		function typecheck() {
+        var path = document.getElementById("chosenfile").value;
+		var file = path.substr(path.lastIndexOf('\\') + 1);//.split('.')[0];
+		var extension = path.substring(path.lastIndexOf('.')+1, path.length) || file;
+		var size = Math.round((document.getElementById("chosenfile").files[0].size)/1024);  //rounded size in KB
+		if (extension == "bin") {
+			document.getElementById("engage").removeAttribute('disabled');
+			document.getElementById("infobanner").innerHTML = "<div class=\"proform\" style=\"line-height:1.5;\">Datei:  <span style=\"font-weight:normal;\">" + file + "</span><br>Dateigröße:  <span style=\"font-weight:normal;\">" +size + " KB</span></div>";
+				}
+		else {document.getElementById("infobanner").innerHTML = ("Es sind nur Dateien vom Typ .bin zulässig");}
+		}
+		
+		function confirmOTA() {
+		var confirmOTA = confirm('Soll das bestehende Programm wirklich überschrieben werden?');
+			if (confirmOTA == true) {
+			document.getElementById("OTAFile").submit();
+			document.getElementById("infobanner").innerHTML = ("<div class=\"proform\" style=\"padding:0.5em;\">...updating...</div>");		
+			}
+		}
+  
+</SCRIPT>
+</head>
+<body>
+
+<div>
+
+<div class="aussen">
+<h1><nobr>Tobers Multidisplay</nobr></h1>
+
+<h2>OTA</h2><br>
+<p>
+<div class="proform" id="currentBox" style="line-height:1.5;">aktueller Sketch: <span id="currentName" style="font-weight:normal;"></span></div>
+<div class="spiffsinput">
+<form id="OTAFile" action="/ota" method="POST" enctype="multipart/form-data" target="InfoFrame" onsubmit="confirmOTA()">
+<input id="chosenfile" type="file" name="upload" accept=".bin" onchange="typecheck()">
+<input id="engage" type="submit" value="Upload" disabled>
+</form>
+</div>
+
+<div>
+<span id="infobanner"></span>
+<div id="iframebox" style="height:3em;"><iframe name="InfoFrame" style="border:none;"></iframe></div>
+
+</div>
+
+
+<div>
+<div class="promenu"><a class="prolink" href="admin.html">Admin</a></div>
+<div class="promenu"><a class="prolink" href="config.html">Config</a></div>
+<div class="promenu"><a class="prolink" href="index.html">OwnMsg</a></div>
+<div class="promenu"><a class="prolink" href="news.html">News</a></div>
+<div class="promenu"><a class="prolink" href="weather.html">Wetter</a></div>
+<div class="promenu"><a class="prolink" href="spotify.html">Spotify</a></div>
+<div class="promenu"><a class="prolink" href="spiffs.html">Spiffs</a></div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>
