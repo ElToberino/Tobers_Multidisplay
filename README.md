@@ -43,9 +43,9 @@ This project wouldn't have been possible without the work of many others:
 * Special thanks to Benoit Blanchon for his great Arduino Json Library and his friendly support.
 * Local language concept and some parts of weather functions inspired by ericBcreator and his great display project
 * SPIFFS administration taken and adopted from the great Arduino ESP website https://fipsok.de/ by Jens Fleischer
-* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/
+* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/<br>
 Thanks to the many, many other programmers and enthusiasts in the web whose work and helpfulness enabled me to realize such a project.<br>
-<br>
+<br><br>
 **Some impressions of the web interface:**<br>
 <img src="showcase/public.jpg" width="200"><img src="showcase/admin.jpg" width="200">
 <br>
