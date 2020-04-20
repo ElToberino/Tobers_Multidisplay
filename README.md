@@ -47,5 +47,5 @@ This project wouldn't have been possible without the work of many others:
 Thanks to the many, many other programmers and enthusiasts in the web whose work and helpfulness enabled me to realize such a project.<br>
 <br><br>
 **Some impressions of the web interface:**<br>
-<img src="showcase/public.jpg" width="250">&nbsp;&nbsp;<img src="showcase/admin.jpg" width="200">&nbsp;&nbsp;<img src="showcase/config.jpg" width="200">
+<img src="showcase/public.jpg" height="250">&nbsp;&nbsp;<img src="showcase/admin.jpg" height="250">&nbsp;&nbsp;<img src="showcase/config.jpg" height="250">
 <br>
