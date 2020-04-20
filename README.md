@@ -57,5 +57,5 @@ The most annoying issue is [related to the webserver](https://github.com/espress
 Sometimes after skipping the config portal ( - regular setup with Wifi credentials works fine - ) the webserver can't be reached, though the AP has been established. Power cycling the ESP32 can help. <br>
 *I guess this could be related to another known issue [connection only every second time](https://github.com/espressif/arduino-esp32/issues/2501#). You won't notice that issue, because I made a workaround for this in the code.*<br>
 <br>
-*ESP8266*
+*ESP8266*<br>
 In some rare cases, there can occur some heap problems calling weather Data - but only if debug mode is active. So if you don't need it, disable debugging and everything works fine. (I was able to confirm this, writing the successful calls of weather data into a log file for several days.)
