@@ -1,3 +1,4 @@
+# NOT YET FINISHED
 # Tobers Multidisplay for ESP8266 and ESP32
 Tobers Multidisplay is a LED-Matrix display made of MAX7219 LED matrix modules and controlled by an ESP8266 or an ESP32. It is based on the fantastic [Parola library](https://github.com/MajicDesigns/MD_MAX72XX) by majicDesigns and can show current time and date, news, current weather & forecast, up to four custom messages, one guest message and - if ESP32 - information about the song currently playing on Spotify.
 
