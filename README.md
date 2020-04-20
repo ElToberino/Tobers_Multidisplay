@@ -39,8 +39,8 @@ This project wouldn't have been possible without the work of many others:
 * Special thanks to Benoit Blanchon for his great Arduino Json Library and his friendly support
 * Local language concept and some parts of weather functions inspired by ericBcreator and his [really nice display project](https://www.hackster.io/ericBcreator/1024-led-matrix-wifi-message-board-with-menu-web-interface-1b2666)
 * SPIFFS administration taken and adopted from the great Arduino ESP website https://fipsok.de/ by Jens Fleischer
-* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/ * <br>
-<br>
+* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/ <br>
+
 Thanks to the many, many other programmers and enthusiasts in the web whose work and helpfulness enabled me to realize such a project.<br>
 <br><br>
 **Some impressions of the web interface:**<br>
