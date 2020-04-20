@@ -1,0 +1,42 @@
+/* 
+   CSS file for WiFimanager_for_Multidosplay -> must be placed on SPIFFS file system
+   Note: the follwing definitions made here of must also be defined in variable "const char HTTP_STYLE_LIGHT[]" in file strinhs_en.h :
+   body
+   h1
+   h3
+   .wrap
+   a
+   .closing
+*/
+
+body {text-align:center; margin:0; padding:0; background-color:#f6b54d; font-size:1em; font-family:sans-serif; color:white;}
+.wrap {margin:1em; background-color:#f39c12; text-align:left; display:inline-block; padding:1em; border-radius:1em;}
+h1 {text-align:center; font-size:180%; margin:0; padding:0; margin-bottom:0.5em; color:#af601a;}
+h2 {text-align:center; font-weight:normal; margin:0; padding:0; margin-top:0.8em; margin-bottom:2em; color:white; font-size:115%; }
+h3 {text-align:center; font-weight:normal; margin:0; padding:0; margin-top:0.8em; margin-bottom:1em; color:white; font-size:115%; }
+h4 {text-align:center; font-weight:bold; margin:0; padding:0; margin-top:0.8em; margin-bottom:1em; color:#af601a; font-size:115%; }
+div {margin-top: 0.3em; margin-bottom: 0.0em; border-radius:1em; border-style: solid; border-width:0px; border-color:red; color:white; text-align:center; padding:0.2em 2em 1em 1em;}
+form {width:80%; margin:0; padding:0; margin-left:10%;}
+.c{text-align: center;}
+label {font-size:90%;}
+input {width:92%; margin:0; padding:0.2em; border:0.1em solid #e1c3a9; border-radius:0.4em; border-style: solid; font-size:100%; background-color:white; margin-top:0.1em; margin-bottom:0.8em; color: #af601a;}
+button {width:92%; margin:0; padding:0; margin-left:4%; border:0.1em solid #e1c3a9; border-radius:0.4em; border-style: solid; font-size:90%; background-color: #af601a ; padding-top:0.4em; padding-bottom:0.4em; padding-left:0.6em; padding-right:0.6em; color:white;}
+button:hover {background-color:white; color:#af601a;}
+button:active {background-color: white; transform: translateY(2px);}
+a {color:white;}
+a:hover {color:#af601a;}
+a:active { color:#af601a;}
+.q{height:16px;margin:0;padding:0 5px;text-align:right;min-width:38px;float:right}.q.q-0:after{background-position-x:0}.q.q-1:after{background-position-x:-16px}.q.q-2:after{background-position-x:-32px}.q.q-3:after{background-position-x:-48px}.q.q-4:after{background-position-x:-64px}.q.l:before{background-position-x:-80px;padding-right:5px}.ql .q{float:left}.q:after,.q:before{content:'';width:16px;height:16px;display:inline-block;background-repeat:no-repeat;background-position: 16px 0; background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAAAQCAMAAADeZIrLAAAAJFBMVEX///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADHJj5lAAAAC3RSTlMAIjN3iJmqu8zd7vF8pzcAAABsSURBVHja7Y1BCsAwCASNSVo3/v+/BUEiXnIoXkoX5jAQMxTHzK9cVSnvDxwD8bFx8PhZ9q8FmghXBhqA1faxk92PsxvRc2CCCFdhQCbRkLoAQ3q/wWUBqG35ZxtVzW4Ed6LngPyBU2CobdIDQ5oPWI5nCUwAAAAASUVORK5CYII='); filter: invert(100%);}
+/*.msg{width:70%; margin:0; padding:0; margin-top:2em; margin-bottom:0.5em;  border:0.1em solid #e1c3a9; border-radius:0.4em; border-style: solid; font-size:90%; padding-top:0.4em; padding-bottom:0.4em; padding-left:0.6em; padding-right:0.6em; margin-left:10%; color:white;border-left-width:0.6em;}.msg h4{margin-top:0;margin-bottom:0.1em}.msg.P{border-left-color:#1fa3ec}.msg.P h4{color:#1fa3ec}.msg.D{border-left-color:#dc3630}.msg.D h4{color:#dc3630}*/
+hr {border: 1px dotted #af601a;}
+dl {margin-left:10%;}
+dd {color:#af601a;}
+.backlink {padding:2em 1em 1em 1em; text-align:center; font-size:90%;}
+.info {padding:1em 1em 1em 1em; text-align:center; font-size:90%;}
+.deviceinfo {text-align:center; font-weight:normal; margin:0; padding:0; margin-top:0.8em; color:white; font-size:115%;}
+.closing {margin-top:2em; margin-bottom:2em; text-align:center; line-height:1.5;}
+.labelAdv {width:80%; font-size:90%;}
+.staticRadioLabel {width:10%; margin-left:1.5em; font-size:90%;}
+.staticRadioInput {width:10%; margin-bottom:1.2em; font-size:90%;}
+.staticlabel {width:80%; font-size:90%; display:none;}
+.none {display:none;}

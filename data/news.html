@@ -1,0 +1,161 @@
+﻿<!-- 
+Tobers Multidisplay by ElToberino (c) 2020
+for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-control" content="no-cache">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>News Summary</title>
+  <SCRIPT>
+  window.addEventListener('load', () => {
+		 uno();
+		 due();
+		 })
+		  
+        function uno() {
+          fetch('/showNews')
+			  .then(response => {
+				return response.json()
+				})
+              .then(data => {
+			  
+				document.getElementById("Source1").innerHTML = data.S1;
+				document.getElementById("Source2").innerHTML = data.S2;
+				
+				document.getElementById("Link0").innerHTML = data.News0;
+				document.getElementById("Link0").href = data.NewsURL0;
+				
+				document.getElementById("Link1").innerHTML = data.News1;
+				document.getElementById("Link1").href = data.NewsURL1;
+				
+				document.getElementById("Link2").innerHTML = data.News2;
+				document.getElementById("Link2").href = data.NewsURL2;
+				
+				document.getElementById("Link3").innerHTML = data.News3;
+				document.getElementById("Link3").href = data.NewsURL3;
+				
+				document.getElementById("Link3").innerHTML = data.News3;
+				document.getElementById("Link3").href = data.NewsURL3;
+				
+				document.getElementById("Link4").innerHTML = data.News4;
+				document.getElementById("Link4").href = data.NewsURL4;
+				
+				document.getElementById("Link5").innerHTML = data.News5;
+				document.getElementById("Link5").href = data.NewsURL5;
+				
+				
+				
+				console.log(data)
+				
+				
+				})
+			.catch(err => {
+    // Do something for an error here
+				})
+				}
+				
+		 function due() {
+          fetch('/showNews2')
+			  .then(response => {
+				return response.json()
+				})
+              .then(data => {
+			  
+				document.getElementById("Source3").innerHTML = data.S1;
+				document.getElementById("Source4").innerHTML = data.S2;
+				
+				document.getElementById("Link6").innerHTML = data.News6;
+				document.getElementById("Link6").href = data.NewsURL6;
+				
+				document.getElementById("Link7").innerHTML = data.News7;
+				document.getElementById("Link7").href = data.NewsURL7;
+				
+				document.getElementById("Link8").innerHTML = data.News8;
+				document.getElementById("Link8").href = data.NewsURL8;
+				
+				document.getElementById("Link9").innerHTML = data.News9;
+				document.getElementById("Link9").href = data.NewsURL9;
+				
+				document.getElementById("Link10").innerHTML = data.News10;
+				document.getElementById("Link10").href = data.NewsURL10;
+				
+				document.getElementById("Link11").innerHTML = data.News11;
+				document.getElementById("Link11").href = data.NewsURL11;
+			
+				
+				
+				
+				console.log(data)
+				})
+			.catch(err => {
+    // Do something for an error here
+				})
+				}
+				
+		function sleep(miliseconds) {
+			var currentTime = new Date().getTime();
+			while (currentTime + miliseconds >= new Date().getTime()) {
+			}
+}
+  </SCRIPT>   
+
+</head>
+<body>
+
+<div>
+
+<div class="aussen">
+<h1><nobr>Tobers Multidisplay</nobr></h1>
+
+<h2>News Summary</h2><br>
+
+<p><ul style="list-style: square inside; width:100%; margin:0; padding:0">
+<div id="Source1" class="newssource"></div>
+<div class="sourcegroup">
+<li class="news"><a class="newslink" id="Link0" target="_blank" href="index.html">... loading news ...</a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link1" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link2" target="_blank" href="index.html"></a><br></li>
+</div>
+<div id="Source2" class="newssource"></div>
+<div class="sourcegroup">
+<li class="news"><a class="newslink" id="Link3" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link4" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link5" target="_blank" href="index.html"></a><br></li>
+</div>
+<div id="Source3" class="newssource"></div>
+<div class="sourcegroup">
+<li class="news"><a class="newslink" id="Link6" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link7" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link8" target="_blank" href="index.html"></a><br></li>
+</div>
+<div id="Source4" class="newssource"></div>
+<div class="sourcegroup">
+<li class="news"><a class="newslink" id="Link9" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link10" target="_blank" href="index.html"></a><br></li>
+<li class="news" style="margin-top:1em;"><a class="newslink" id="Link11" target="_blank" href="index.html"></a><br></li>
+</div>
+</ul>
+<br>
+<div style="text-align:center; color:white;">
+<a href="index.html" style="outline:none;"><div class="knopflink">Message</div></a>
+<a href="weather.html" style="outline:none;"><div class="knopflink">Weather</div></a>
+<a href="spotify.html" style="outline:none;"><div class="knopflink">Spotify</div></a>
+</div>
+
+<div>
+<div class="promenu small">With Login only:</div>
+<div class="promenu small"><a class="prolink" href="admin.html">Admin</a></div>
+<div class="promenu small"><a class="prolink" href="config.html">Config</a></div>
+<div class="promenu small"><a class="prolink" href="spiffs.html">Spiffs</a></div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

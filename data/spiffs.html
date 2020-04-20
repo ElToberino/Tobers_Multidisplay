@@ -1,0 +1,95 @@
+﻿<!-- 
+Tobers Multidisplay by ElToberino (c) 2020
+for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+SPIFFS functions and this html/js functions taken and adopted from https://fipsok.de/ (Jens Fleischer)
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-control" content="no-cache">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>Spiffs Administration</title>
+  <SCRIPT>
+        function list() {
+           let myList = document.querySelector('main');
+           fetch('json').then(function (response) {
+             return response.json();
+           }).then(function (json) {
+             for (var i = 0; i < json.length - 1; i++) {
+               let dir = `<div class="spiffs"><div class="spiffsfile"><span>${json[i].name}</span></div><div class="spiffsaction"><small> ${json[i].size}</small><a class="spiffslink" href ="${json[i].name}"download="${json[i].name}"> Download </a>`;
+               if (json[i].name != 'spiffs.html') {
+                 dir += `or <a class="spiffslink" href ="${json[i].name}?delete=/${json[i].name}" onclick="return confirmDel()">Delete </a></div>`;
+               }
+               myList.insertAdjacentHTML('beforeend', dir);
+             }
+             myList.insertAdjacentHTML('beforeend', `<div class="proform">SPIFFS uses ${json[i].usedBytes} of ${json[i].totalBytes}`);
+             free = json[i].freeBytes;
+           });
+         }
+         function fileSize() {
+           var nBytes = document.querySelector('input').files[0].size, sOutput = `${nBytes} Byte`;
+           var a = document.querySelector('span'), b = document.querySelector('[value="Upload"]');
+           for (var aMultiples = [
+             ' KB',
+             ' MB'
+           ], nMultiple = 0, nApprox = nBytes / 1024; nApprox > 1; nApprox /= 1024, nMultiple++) {
+             sOutput = nApprox.toFixed(2) + aMultiples[nMultiple];
+           }
+           if (nBytes > free) {
+             a.innerHTML = `<div class="proform"><small> File Size: ${sOutput}</small><strong style="color: red;"> Not enough memory left </strong></div>`;
+             b.setAttribute('disabled', 'disabled');
+           } 
+           else {
+             a.innerHTML = `<div class="proform">File Size: ${sOutput} </div>`;
+             b.removeAttribute('disabled');
+           }
+         }
+         function jn() {
+           return confirm(`Dou you really want to format your SPIFFS? You will ERASE all data!\nYou must upload again all files after formatting!`);
+		 }
+		 function confirmDel() {
+          return confirm(`Are you sure?\nYou will permanently delete this file!`);
+		 }
+		 document.addEventListener('DOMContentLoaded', list);
+</SCRIPT>
+</head>
+<body>
+
+<div>
+
+<div class="aussen">
+<h1><nobr>Tobers Multidisplay</nobr></h1>
+
+<h2>Spiffs Administration</h2><br>
+<p>
+<div class="spiffsinput">
+<form action="/upload" method="POST" enctype="multipart/form-data">
+<input type="file" name="upload" onchange="fileSize()">
+<input type="submit" value="Upload" disabled>
+</form>
+</div>
+
+<div>
+<span></span>
+<main></main>
+</div>
+<form action="/format" method="POST"><input type="submit" value="Format SPIFFS" onclick="return jn()"></form>
+
+<div>
+<div class="promenu"><a class="prolink" href="admin.html">Admin</a></div>
+<div class="promenu"><a class="prolink" href="config.html">Config</a></div>
+<div class="promenu"><a class="prolink" href="index.html">OwnMsg</a></div>
+<div class="promenu"><a class="prolink" href="news.html">News</a></div>
+<div class="promenu"><a class="prolink" href="weather.html">Weather</a></div>
+<div class="promenu"><a class="prolink" href="spotify.html">Spotify</a></div>
+<div class="promenu">Spiffs</div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

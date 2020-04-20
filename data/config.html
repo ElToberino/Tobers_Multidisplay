@@ -1,0 +1,296 @@
+﻿<!-- 
+Tobers Multidisplay by ElToberino (c) 2020
+for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+-->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-control" content="no-cache">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>Configuration</title>
+  <SCRIPT>
+        window.addEventListener('load', () => {
+		once();
+		 })
+		
+		function once() {
+		 
+          fetch('/showConfig')
+			  .then(response => {
+				return response.json()
+				})
+              .then(data => {
+			  
+				document.getElementById("Time").innerHTML = data.Minutes;
+                document.getElementById("SetIn").value = data.Intens;
+				document.getElementById("SetSpeed").value = data.Speed;
+				document.getElementById("SSID").innerHTML = data.SSID;
+				document.getElementById("IP").innerHTML = data.IP;
+				
+				if (data.EnableXL == 0) {                                             //sets checkboxes according to received values
+					document.getElementById("CheckXL").checked = "";
+					}
+				else {
+				    document.getElementById("CheckXL").checked = "checked";
+					}
+				
+				document.getElementById("EnableXL").value = data.EnableXL;
+					
+				
+				console.log(data)
+				})
+			.catch(err => {
+                document.getElementById("showbox").innerHTML = "No connection to display !";
+			    document.getElementById("showbox").className = "configred";
+				})
+				}
+		
+        function SendeFunction() {
+		    document.getElementById("formu").submit();
+			sleep(1000);
+			once();
+			document.getElementById("showbox").innerHTML = "Intensity successfully set !";
+			document.getElementById("showbox").className = "configgreen";
+			}
+		
+		function SendeFunctionSP() {
+		    document.getElementById("formuSP").submit();
+			sleep(1000);
+			once();
+			document.getElementById("showbox").innerHTML = "Speed successfully set !";
+			document.getElementById("showbox").className = "configgreen";
+			}
+
+		function SendeFunction0() {
+		    document.getElementById("formu0").submit();
+			document.getElementById("showbox").innerHTML = "Configuration successfully saved !";
+			document.getElementById("showbox").className = "configgreen";
+			}
+			
+		function SendeFunction1() {
+			//transforms "checked" attributes to values in hidden input:
+			if (document.getElementById("CheckXL").checked == true) { document.getElementById("EnableXL").value = 1;}    //transforms "checked" attributes to values in hidden input
+			else {document.getElementById("EnableXL").value = 0;}
+		    document.getElementById("formu1").submit();
+			sleep(1000);
+			once();
+			document.getElementById("showbox").innerHTML = "Reloading News";
+			document.getElementById("showbox").className = "configgreen";
+			}
+			
+		function SendeFunction2() {
+		    document.getElementById("formu2").submit();
+			document.getElementById("showbox").innerHTML = "Reloading Weather";
+			document.getElementById("showbox").className = "configgreen";
+			}			
+			
+		function SendeFunction3() {
+		    var checkres = confirm('Do you really want to restart the display?');
+			if (checkres == true) {
+		    document.getElementById("formu3").submit();
+			document.getElementById("showbox").innerHTML = "Display has been restarted";
+			document.getElementById("showbox").className = "configgreen";
+			sleep(8000);
+			once();
+			 }
+			}			
+		
+		
+		
+		
+		function SendeFunction4() {
+		    var checkdel = confirm('Do you really want to erase your WiFi Login Data?\nDisplay will restart in AP mode.');
+			if (checkdel == true) {
+			document.getElementById("formu4").submit();
+			document.getElementById("showbox").innerHTML = "Erased WiFi data!<br>Display restarts as AP.";
+			document.getElementById("showbox").className = "configgreen";
+			 }
+			}			
+			
+		function SendeFunction5() {
+		    window.location = "ota.html";
+			}			
+	
+		function sleep(miliseconds) {
+			var currentTime = new Date().getTime();
+			while (currentTime + miliseconds >= new Date().getTime()) {
+			}
+}	
+		
+</SCRIPT>
+</head>
+<body>
+
+<div>
+
+<div class="aussen">
+<h1><nobr>Tobers Multidisplay</nobr></h1>
+
+<h2 style="margin-bottom:-0.8em;">Configuration</h2><br>
+<p>
+
+<div id="showbox" class="configinvisible"><span id="ownmessage">0</span></div>
+<div class="showconf"><span class="innershowconf">Display: </span>in operation for <span id="Time">0</span> minutes</div>
+<div class="showconf"><span class="innershowconf">Network: </span><span id="SSID">0</span></div>
+<div class="showconf"><span class="innershowconf">IP-Address: </span><span id="IP">0</span></div>
+
+<FORM id="formu" METHOD="POST" action="/postConfigIntens" target="hiddenFrame" style="margin:0; padding:0; text-align:left; width:100%;">
+<div class="config">
+
+<div style="display:inline-block;">
+<input type="button" onclick="SendeFunction()" class="configknopf" value="Set Intensity">
+</div>
+<div style="display: inline-block;" class="configright">
+Display Intensity &nbsp;&nbsp;&nbsp;<small>&nbsp;</small>
+</div>
+
+<div style="display: inline-block;">
+<select id="SetIn" type="text" name="newIntens" value="" class="innerproform" style="margin:0.2em 0em 0em 0.1em; width:3em; font-size:105%;">
+<option value="0">0</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+<option value="9">9</option>
+<option value="10">10</option>
+<option value="11">11</option>
+<option value="12">12</option>
+<option value="13">13</option>
+<option value="14">14</option>
+<option value="15">15</option>
+</select>
+</div>
+
+</div>
+</form>
+
+<FORM id="formuSP" METHOD="POST" action="/postConfigSpeed" target="hiddenFrame" style="margin:0; padding:0; text-align:left; width:100%;">
+<div class="config">
+
+<div style="display:inline-block;">
+<input type="button" onclick="SendeFunctionSP()" class="configknopf" value="Set Speed">
+</div>
+<div style="display: inline-block;" class="configright">
+Global Scroll Speed
+</div>
+
+<div style="display: inline-block;">
+<select id="SetSpeed" type="text" name="newSpeed" value="" class="innerproform" style="margin:0.2em 0em 0em 0.1em; width:3em; font-size:105%;">
+<option value="10">1</option>
+<option value="9">2</option>
+<option value="8">3</option>
+<option value="7">4</option>
+<option value="6">5</option>
+<option value="5">6</option>
+<option value="4">7</option>
+<option value="3">8</option>
+<option value="2">9</option>
+<option value="1">10</option>
+</select>
+</div>
+</div>
+</form>
+
+
+<div class="config" style="padding-top:0.4em; padding-bottom:0.3em;">
+<div style="display: inline-block; float:left;">
+<FORM id="formu1" METHOD="POST" action="/news" target="hiddenFrame" style="margin:0; padding:0;">
+<input type="button" onclick="SendeFunction1()" class="configknopf" value="Refresh News">
+</div>
+<div style="float:left; margin:0.35em 0em 0em 0.8em;" class="configright">
+Reload News &nbsp;&nbsp;
+</div>
+<div style="float:left; margin:0.45em 0em 0em 1.2em; font-weight:bold;">
+XL
+</div>
+<div style="display: inline-block;">
+<label class="switchConfig" style="margin-bottom:0em;">
+<input type="checkbox" class="hiddenBox" id="CheckXL" checked="">
+<span class="slider"></span>
+</label>
+<input id="EnableXL" type="hidden" name="MyEnableXL" value="">
+</div>
+</form>
+</div>
+
+
+
+
+<div class="config">
+<div style="display: inline-block;">
+<FORM id="formu2" METHOD="POST" action="/weather" target="hiddenFrame" style="margin:0; padding:0;">
+<input type="button" onclick="SendeFunction2()" class="configknopf" value="Refresh Weath">
+</form>
+</div>
+<div style="display: inline-block;" class="configright">
+Reload Weather Data
+</div>
+</div>
+
+<div class="config">
+<div style="display: inline-block;">
+<FORM id="formu0" METHOD="POST" action="/saveConfig" target="hiddenFrame" style="margin:0; padding:0;">
+<input type="button" onclick="SendeFunction0()" class="configknopf" value="Save Config">
+</form>
+</div>
+<div style="display: inline-block;" class="configright">
+Save Configuration
+</div>
+</div>
+
+<div class="config">
+<div style="display: inline-block;">
+<FORM id="formu3" METHOD="POST" action="/reset" target="hiddenFrame" style="margin:0; padding:0;">
+<input type="button" onclick="SendeFunction3()" class="configknopf" value="Restart Device">
+</form>
+</div>
+<div style="display: inline-block;" class="configright">
+Restart ESP
+</div>
+</div>
+
+<div class="config">
+<div style="display: inline-block;">
+<FORM id="formu4" METHOD="POST" action="/ex" target="hiddenFrame" style="margin:0; padding:0;">
+<input type="button" onclick="SendeFunction4()" class="configknopf" value="Erase WiFi-Data">
+</form>
+</div>
+<div style="display: inline-block;" class="configright">
+Erase WiFi Data
+</div>
+</div>
+
+<div class="config">
+<div style="display: inline-block;">
+<FORM id="formu5" METHOD="POST" action="/ex" target="hiddenFrame" style="margin:0; padding:0;">
+<input type="button" onclick="SendeFunction5()" class="configknopf" value="OTA">
+</form>
+</div>
+<div style="display: inline-block;" class="configright">
+Over the Air Update
+</div>
+</div>
+
+
+<div>
+<div class="promenu"><a class="prolink" href="admin.html">Admin</a></div>
+<div class="promenu">Config</div>
+<div class="promenu"><a class="prolink" href="index.html">OwnMsg</a></div>
+<div class="promenu"><a class="prolink" href="news.html">News</a></div>
+<div class="promenu"><a class="prolink" href="weather.html">Weather</a></div>
+<div class="promenu"><a class="prolink" href="spotify.html">Spotify</a></div>
+<div class="promenu"><a class="prolink" href="spiffs.html">Spiffs</a></div>
+</div>
+
+</div>
+</div>
+<iframe name="hiddenFrame" width="0" height="0" border="0" style="display: none;"></iframe>
+</body>
+</html>
