@@ -2,7 +2,7 @@
 Tobers Multidisplay is a LED-Matrix display controlled by an ESP8266 or an ESP32. It can show current time and date, news, current weather & forecast, up to four custom messages, one guest message and - if ESP32 - information about the song currently playing on Spotify.
 
 Tobers Multidisplay is widely and easily configurable via web interface.
-<img src="showcase/howto.jpg" width="700">
+<img src="showcase/Multidisplay_final.jpg" width="500">
 <br><br>
 
 **Inspiration**<br>
