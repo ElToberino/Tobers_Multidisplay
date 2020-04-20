@@ -11,31 +11,31 @@ There is a great number of projects online basing on this library - all kinds of
 <br><br>
 
 **Requirements**<br>
-* *Hardware* *
+* *Hardware*<br>
 ESP8266 with 4MB flash Memory orr ESP32 (I recommend development modules like NodeMCU e.g.)<br>
 Max7219 8x8 LED matrix modules (My display is made of eight modules)<br>
 
-* *Arduino IDE and the following Libraries:* *<br>
+* *Arduino IDE and the following Libraries:*<br>
 [MAX72xx Library by majicDesigns](https://github.com/MajicDesigns/MD_MAX72XX)<br>
 [Parola Library by majicDesigns](https://github.com/MajicDesigns/MD_Parola)<br>
 [Arduino Json library by Benoit Blanchon](https://github.com/bblanchon/ArduinoJson)<br>
 [My fork of WifiManager library (development branch) by tzapu/tablatronix](https://github.com/ElToberino/WiFiManager_for_Multidisplay)<br>
 
-* *Installed Boards:* *<br>
+* *Installed Boards:*<br>
 [ESP8266 core for Arduino](https://github.com/esp8266/Arduino)<br>
 [ESP32 core for Arduino](https://github.com/espressif/arduino-esp32)<br>
 
-* *Recommended tools:* *<br>
+* *Recommended tools:*<br>
 [ESP8266 Sketch Data Upload](https://github.com/esp8266/arduino-esp8266fs-plugin)<br>
 [ESP8266 Sketch Data Upload](https://github.com/me-no-dev/arduino-esp32fs-plugin)<br>
 
-* *Required accounts:* *<br>
+* *Required accounts:*<br>
 WEATHER: personal api key from [openweathermap.org](https://openweathermap.org/)<br>
 NEWS: personal api key from [newsapi.org/](https://newsapi.org/)<br>
 SPOTIFY: (free or premium) account AND [developer registration of your device](https://developer.spotify.com/dashboard/)<br>
 <br>
 <br>
-**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the article I wrote at hacktser.io. You will also find some more pictures and video there.**
+**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hacktser.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and video there.**
 
 
 
