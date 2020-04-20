@@ -8,16 +8,16 @@ Tobers Multidisplay is widely and easily configurable via web interface.<br><br>
 
 **Requirements**<br>
 * *Hardware*<br>
-ESP8266 with 4MB flash Memory orr ESP32 (I recommend development modules like NodeMCU e.g.)<br>
+ESP8266 with 4MB flash memory or ESP32 (I recommend development modules like NodeMCU e.g.)<br>
 Max7219 8x8 LED matrix modules (My display is made of eight modules)<br>
 
-* *Arduino IDE and the following Libraries:*<br>
+* *Arduino IDE and the following libraries:*<br>
 [MAX72xx Library by majicDesigns](https://github.com/MajicDesigns/MD_MAX72XX)<br>
 [Parola Library by majicDesigns](https://github.com/MajicDesigns/MD_Parola)<br>
 [Arduino Json library by Benoit Blanchon](https://github.com/bblanchon/ArduinoJson)<br>
 [My fork of WifiManager library (development branch) by tzapu/tablatronix](https://github.com/ElToberino/WiFiManager_for_Multidisplay)<br>
 
-* *Installed Boards:*<br>
+* *Installed boards:*<br>
 [ESP8266 core for Arduino](https://github.com/esp8266/Arduino)<br>
 [ESP32 core for Arduino](https://github.com/espressif/arduino-esp32)<br>
 
@@ -37,9 +37,10 @@ SPOTIFY: (free or premium) account AND [developer registration of your device](h
 This project wouldn't have been possible without the work of many others:
 * Special thanks to Marco Colli (MajicDesigns) for his libraries, the excellent documentation and the support via arduino forum
 * Special thanks to Benoit Blanchon for his great Arduino Json Library and his friendly support
-* Local language concept and some parts of weather functions inspired by ericBcreator and his [great display project](https://www.hackster.io/ericBcreator/1024-led-matrix-wifi-message-board-with-menu-web-interface-1b2666)
+* Local language concept and some parts of weather functions inspired by ericBcreator and his [really nice display project](https://www.hackster.io/ericBcreator/1024-led-matrix-wifi-message-board-with-menu-web-interface-1b2666)
 * SPIFFS administration taken and adopted from the great Arduino ESP website https://fipsok.de/ by Jens Fleischer
-* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/<br>
+* HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/ * <br>
+<br>
 Thanks to the many, many other programmers and enthusiasts in the web whose work and helpfulness enabled me to realize such a project.<br>
 <br><br>
 **Some impressions of the web interface:**<br>
