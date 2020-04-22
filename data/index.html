@@ -55,8 +55,9 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				
 		function SendeFunction() {
 			document.getElementById("formu").submit();
-			//sleep(500);
+			sleep(200);
 			once();
+			sleep(200);
 			document.getElementById("warning").innerHTML = "<br><b>will be shown during next cycle</b><br>";
 			document.getElementById("showbox").className = "greensign";
 		}			

@@ -13,6 +13,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <title>Spotify Info</title>
   <SCRIPT>
         window.addEventListener('load', () => {
+		//sleep(50);											// uncomment this to circumvent ESP32 problem with chrome
 		 once();
 		 })
 		  
@@ -31,14 +32,16 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				})
 			.catch(err => {
                  // Do something for an error here
-				 document.getElementById("Songinfo").innerHTML = "FEHLER: Daten konnten nicht geladen werden!";
+				 document.getElementById("Songinfo").innerHTML = "ERROR: Couldn't load data!";
 				})
 		}
 				
+		function sleep(miliseconds) {
+			var currentTime = new Date().getTime();
+			while (currentTime + miliseconds >= new Date().getTime()) {
+			}
+		}	
 			
-		
-				
-		
 </SCRIPT>
 
 </head>
