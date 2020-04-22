@@ -4,13 +4,13 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 -->
 
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="Cache-control" content="no-cache">
     <link rel="stylesheet" type="text/css" href="style.css">
-    <title>Deine Nachricht auf dem Display</title>
+    <title>Your message on display</title>
   <SCRIPT>
         enabled = 1;    // globale variable
 		 
@@ -28,7 +28,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				enabled = data.No2;
 				
 				if (enabled == 0) {
-					document.getElementById("warning").innerHTML = "Ownmessage ist deaktiviert";
+					document.getElementById("warning").innerHTML = "Ownmessage is deactivated";
 					document.getElementById("showbox").className = "redsign";
 					document.getElementById("ownmessage").innerHTML = "";
 					document.getElementById("eins").value = "X X X";
@@ -45,7 +45,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				})
 			.catch(err => {
                  // Do something for an error here
-				 document.getElementById("warning").innerHTML = "Daten konnten nicht geladen werden!";
+				 document.getElementById("warning").innerHTML = "Couldn't load data !";
 				 document.getElementById("showbox").className = "redsign";
 				})
 		}
@@ -55,10 +55,9 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				
 		function SendeFunction() {
 			document.getElementById("formu").submit();
-			sleep(200);
+			//sleep(500);
 			once();
-			sleep(200);
-			document.getElementById("warning").innerHTML = "<br><b>wird beim nächsten Durchlauf angezeigt</b><br>";
+			document.getElementById("warning").innerHTML = "<br><b>will be shown during next cycle</b><br>";
 			document.getElementById("showbox").className = "greensign";
 		}			
 		
@@ -70,7 +69,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 			var result = toberREGEX.test(versuch);
 			if (result == true) {
 				document.getElementById("ownmessage").innerHTML = "";
-				document.getElementById("warning").innerHTML = "Falsche Zeichen! Nicht erlaubt sind: }  {  \\  \" <br>";
+				document.getElementById("warning").innerHTML = "Error! &nbsp;  }  {  \\  \" are not allowed! <br>";
 				document.getElementById("showbox").className = "redsign";
 				}
 			else { 
@@ -106,25 +105,25 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 <div class="aussen">
 <h1><nobr>Tobers Multidisplay</nobr></h1>
 
-<h2>Schicke Deine Nachricht auf's Display</h2><br>
+<h2>Send Your Message To Display</h2><br>
 <p>
 <FORM id="formu" METHOD="POST" action="/postFormSimple" target="hiddenFrame">
 <input id="eins" class="eingabe" type="text" name="myText" pattern="[^{}\x22\\]+" maxlength="490" value=""><br>
 <div id="showbox" class="invisible"><span id="ownmessage"></span><span id="warning"></span></div>
-<input type="button" class="knopf" onclick="trick()" value="Abschicken"><br>
+<input type="button" class="knopf" onclick="trick()" value="Send Message"><br>
 </form>
 <br>
 <br>
 <br>
 <div style="text-align:center; color:white;">
 <a href="news.html" style="outline:none;"><div class="knopflink">News</div></a>
-<a href="weather.html" style="outline:none;"><div class="knopflink">Wetter</div></a>
+<a href="weather.html" style="outline:none;"><div class="knopflink">Weather</div></a>
 <a href="spotify.html" style="outline:none;"><div class="knopflink">Spotify</div></a>
 </div>
 
 
 <div>
-<div class="promenu small">Nur mit Login:</div>
+<div class="promenu small">With Login only:</div>
 <div class="promenu small"><a class="prolink" href="admin.html">Admin</a></div>
 <div class="promenu small"><a class="prolink" href="config.html">Config</a></div>
 <div class="promenu small"><a class="prolink" href="spiffs.html">Spiffs</a></div>

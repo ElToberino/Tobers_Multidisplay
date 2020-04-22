@@ -5,13 +5,13 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
 -->
 
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="Cache-control" content="no-cache">
     <link rel="stylesheet" type="text/css" href="style.css">
-    <title>Spiffsverwaltung</title>
+    <title>Spiffs Administration</title>
   <SCRIPT>
         function list() {
            let myList = document.querySelector('main');
@@ -25,7 +25,7 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
                }
                myList.insertAdjacentHTML('beforeend', dir);
              }
-             myList.insertAdjacentHTML('beforeend', `<div class="proform">SPIFFS belegt ${json[i].usedBytes} von ${json[i].totalBytes}`);
+             myList.insertAdjacentHTML('beforeend', `<div class="proform">SPIFFS uses ${json[i].usedBytes} of ${json[i].totalBytes}`);
              free = json[i].freeBytes;
            });
          }
@@ -39,22 +39,21 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
              sOutput = nApprox.toFixed(2) + aMultiples[nMultiple];
            }
            if (nBytes > free) {
-             a.innerHTML = `<div class="proform"><small> Dateigröße: ${sOutput}</small><strong style="color: red;"> Ungenügend Speicher frei </strong></div>`;
+             a.innerHTML = `<div class="proform"><small> File Size: ${sOutput}</small><strong style="color: red;"> Not enough memory left </strong></div>`;
              b.setAttribute('disabled', 'disabled');
            } 
            else {
-             a.innerHTML = `<div class="proform">Dateigröße: ${sOutput} </div>`;
+             a.innerHTML = `<div class="proform">File Size: ${sOutput} </div>`;
              b.removeAttribute('disabled');
            }
          }
          function jn() {
-           return confirm(`Wirklich formatieren? Alle Daten gehen verloren.\nDu musst anschließend spiffs.html wieder laden.`);
+           return confirm(`Dou you really want to format your SPIFFS? You will ERASE all data!\nYou must upload again all files after formatting!`);
 		 }
 		 function confirmDel() {
-          return confirm(`Soll diese Datei wirklich unwiderruflich gelöscht werden?`);
+          return confirm(`Are you sure?\nYou will permanently delete this file!`);
 		 }
-		 document.addEventListener('DOMContentLoaded', list);					// comment this out to circumvent ESP32 problem with chrome
-		 //window.addEventListener('load', list);								// uncomment this to circumvent ESP32 problem with chrome
+		 document.addEventListener('DOMContentLoaded', list);
 </SCRIPT>
 </head>
 <body>
@@ -64,7 +63,7 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
 <div class="aussen">
 <h1><nobr>Tobers Multidisplay</nobr></h1>
 
-<h2>Spiffsverwaltung</h2><br>
+<h2>Spiffs Administration</h2><br>
 <p>
 <div class="spiffsinput">
 <form action="/upload" method="POST" enctype="multipart/form-data">
@@ -84,7 +83,7 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
 <div class="promenu"><a class="prolink" href="config.html">Config</a></div>
 <div class="promenu"><a class="prolink" href="index.html">OwnMsg</a></div>
 <div class="promenu"><a class="prolink" href="news.html">News</a></div>
-<div class="promenu"><a class="prolink" href="weather.html">Wetter</a></div>
+<div class="promenu"><a class="prolink" href="weather.html">Weather</a></div>
 <div class="promenu"><a class="prolink" href="spotify.html">Spotify</a></div>
 <div class="promenu">Spiffs</div>
 </div>
