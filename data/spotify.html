@@ -4,7 +4,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 -->
 
 <!doctype html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +13,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <title>Spotify Info</title>
   <SCRIPT>
         window.addEventListener('load', () => {
+		 //sleep(50);											// uncomment this to circumvent ESP32 problem with chrome
 		 once();
 		 })
 		  
@@ -35,10 +36,12 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				})
 		}
 				
+		function sleep(miliseconds) {
+			var currentTime = new Date().getTime();
+			while (currentTime + miliseconds >= new Date().getTime()) {
+			}
+		}	
 			
-		
-				
-		
 </SCRIPT>
 
 </head>
@@ -49,7 +52,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 <div class="aussen">
 <h1><nobr>Tobers Multidisplay</nobr></h1>
 
-<h2>Currently playing on Spotify</h2><br>
+<h2>Es läuft gerade auf Spotify</h2><br>
 
 <p>
 <div>
@@ -61,11 +64,11 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 <div style="text-align:center; color:white;">
 <a href="index.html" style="outline:none;"><div class="knopflink">Message</div></a>
 <a href="news.html" style="outline:none;"><div class="knopflink">News</div></a>
-<a href="weather.html" style="outline:none;"><div class="knopflink">Weather</div></a>
+<a href="weather.html" style="outline:none;"><div class="knopflink">Wetter</div></a>
 </div>
 
 <div>
-<div class="promenu small">With Login only:</div>
+<div class="promenu small">Nur mit Login:</div>
 <div class="promenu small"><a class="prolink" href="admin.html">Admin</a></div>
 <div class="promenu small"><a class="prolink" href="config.html">Config</a></div>
 <div class="promenu small"><a class="prolink" href="spiffs.html">Spiffs</a></div>
