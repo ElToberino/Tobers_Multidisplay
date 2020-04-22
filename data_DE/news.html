@@ -12,8 +12,10 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>Newsübersicht</title>
   <SCRIPT>
-  window.addEventListener('load', () => {
+   window.addEventListener('load', () => {
+		 var browser;
 		 uno();
+		 //if (navigator.userAgent.indexOf("Chrome") > -1) sleep(1000);     // uncomment this to circumvent ESP32 problem with chrome
 		 due();
 		 })
 		  

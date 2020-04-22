@@ -53,7 +53,8 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
 		 function confirmDel() {
           return confirm(`Soll diese Datei wirklich unwiderruflich gelöscht werden?`);
 		 }
-		 document.addEventListener('DOMContentLoaded', list);
+		 document.addEventListener('DOMContentLoaded', list);					// comment this out to circumvent ESP32 problem with chrome
+		 //window.addEventListener('load', list);								// uncomment this to circumvent ESP32 problem with chrome
 </SCRIPT>
 </head>
 <body>
