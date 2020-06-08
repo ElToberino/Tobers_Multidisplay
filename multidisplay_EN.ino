@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.0 - 20.04.2020
+//    V 1.1 - 08.06.2020
 //
 //    *********************************************
 //
@@ -34,13 +34,13 @@
 //    successfully compiled with ARDUINO IDE 1.8.12
 //
 //    required board installation:
-//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3
+//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1
 //    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4
 //
 //    required libraries:
 //    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.2.1
 //    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.2.0
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.15.1
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.15.2
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -66,7 +66,15 @@
 //    PLEASE NOTICE THE COMMENTS and set the #defines and hardware configuration parameters according to your needs.
 //
 //    ***************************************************************
-
+//
+//    CHANGELOG V 1.0 -> V 1.1:  - bugfix in function refreshSpotify()
+//                               - small change in getTimeFromServer() due to new ESP8266 Core 2.7.0
+//                               - some small code simplifications in handleAdvanced() and saveAllMessages()
+//                               - small fix in parseSpotify()
+//                               - small fix in serial.printf functions showing http code
+//                               - small changes in some html sites
+//
+//    ***************************************************************
 
 
 
@@ -965,21 +973,24 @@ void getTimeFromServer(){
   uint8_t  time_retry=0;                                         // Counter retry counts time server
  #ifdef ESP32 
   configTzTime(timezone, ntpServer);                             // adjust your local time zone with variable timezone
- #else
-  setenv("TZ", timezone, 1);
  #endif 
   struct tm initial;                                             // temp struct for checking if year==1970 (no received time information means year is 1970)
   initial.tm_year=70;
   
   while(initial.tm_year == 70 && time_retry < 15){                 
- #ifdef ESP32 
-  getLocalTime(&initial);                                       // get time from NTP server (ESP32)
- #else
-  configTime(0, 0, ntpServer);                                  // get time from NTP server (ESP8266)
- #endif 
-  delay(500);
-  time_t now = time(&now);
-  localtime_r(&now, &initial);
+  #ifdef ESP32                                                   // get time from NTP server (ESP32)
+   getLocalTime(&initial);                                       
+  #else                                                          // get time from NTP server (ESP8266)
+   if (esp8266::coreVersionNumeric() >= 20700000){               
+      configTime(timezone, ntpServer); 
+   } else {                                                      // compatibility with ESP8266 Arduino Core Versions < 2.7.0
+      setenv("TZ", timezone , 1);
+      configTime(0, 0, ntpServer);
+   }                            
+  #endif 
+   delay(500);
+   time_t now = time(&now);
+   localtime_r(&now, &initial);
   #ifdef DEBUG
    Serial.print("Time Server connection attempt: ");
    Serial.println(time_retry + 1);
@@ -1251,7 +1262,7 @@ void getWeatherData() {                                              //gets weat
           weathEverLoaded = true;
         } else {
           #ifdef DEBUG 
-            Serial.printf("http error: %s\n", http.errorToString(httpCode).c_str());
+            Serial.printf("http error: %i\n", httpCode);
           #endif
         }
       WeatherCityLoop = (++WeatherCityLoop) % ARRAY_SIZE(ownCityIDs);
@@ -1355,7 +1366,7 @@ void getNewsData() {
         newsEverLoaded = true;
       } else {
         #ifdef DEBUG 
-          Serial.printf("http error: %s\n", http.errorToString(httpCode).c_str());
+          Serial.printf("http error: %i\n", httpCode);
         #endif 
       }
       #ifdef DEBUG
@@ -1439,7 +1450,7 @@ void spoticallback() {                               // handles complete Spotify
       authSuccess = true;
       } else {
       #ifdef DEBUG 
-        Serial.printf("http error: %s\n", http.errorToString(httpCode).c_str());
+        Serial.printf("http error: %i\n", httpCode);
       #endif
       } 
     } else {
@@ -1479,67 +1490,72 @@ void spoticallback() {                               // handles complete Spotify
 
 
 void refreshSpotify(){                                                      // demands and receives a new access token (on startup or when expiretime has elapsed)
-static uint8_t refresh_retry = 0;
-
-if (refresh_retry < 5){  
-  #ifdef DEBUG 
-    Serial.println("Calling Spotify for accesstoken");
-  #endif 
-  HTTPClient http;
+  uint8_t refresh_retry = 0;
+  bool refresh_success = false;
   
-  if(http.begin("https://accounts.spotify.com/api/token", fingerprint)){
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
-    http.addHeader("Authorization", auth);
-  
-    String url = "grant_type=refresh_token&refresh_token=" + refreshtoken;
-    int httpCode =  http.POST(url);
+  while(refresh_retry < 5 && refresh_success == false){  
     #ifdef DEBUG 
-      Serial.println(httpCode);
-    #endif
-
-    if(httpCode == 200) {
-      DynamicJsonDocument doc(400);
-      DeserializationError error = deserializeJson(doc, http.getStream());
-      if (error) {
-        #ifdef DEBUG
-          Serial.println("deserializeJson() failed: ");
-          Serial.println(error.c_str());
-        #endif 
-        return;
-      }
-      const char* newtoken = doc["access_token"];
-      expiretime = doc["expires_in"];
+      Serial.println("Calling Spotify for accesstoken");
+    #endif 
+    HTTPClient http;
+  
+    if(http.begin("https://accounts.spotify.com/api/token", fingerprint)){
+      http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
+      http.addHeader("Authorization", auth);
+  
+      String url = "grant_type=refresh_token&refresh_token=" + refreshtoken;
+      int httpCode =  http.POST(url);
       #ifdef DEBUG 
-        Serial.print("New accesstoken: ");
-        Serial.print(newtoken);
-        Serial.print(" expires in ");
-        Serial.print(expiretime);
-        Serial.println(" seconds.");
-      #endif 
-      accesstoken = "Bearer " + String(newtoken);
-      #ifdef DEBUG
-        Serial.println(accesstoken);
+        Serial.println(httpCode);
       #endif
-      //parseSpotify();                                   // you can uncomment this for debugging purposes
+
+      if(httpCode == 200) {
+        DynamicJsonDocument doc(400);
+        DeserializationError error = deserializeJson(doc, http.getStream());
+        if (error) {
+          #ifdef DEBUG
+            Serial.println("deserializeJson() failed: ");
+            Serial.println(error.c_str());
+          #endif
+          refresh_retry++;
+          return;
+        }
+        const char* newtoken = doc["access_token"];
+        expiretime = doc["expires_in"];
+        #ifdef DEBUG 
+          Serial.print("New accesstoken: ");
+          Serial.print(newtoken);
+          Serial.print(" expires in ");
+          Serial.print(expiretime);
+          Serial.println(" seconds.");
+        #endif 
+        accesstoken = "Bearer " + String(newtoken);
+        #ifdef DEBUG
+          Serial.println(accesstoken);
+        #endif
+        refresh_success = true;
+        //parseSpotify();                                   // you can uncomment this for debugging purposes
+      } else {
+        #ifdef DEBUG 
+          Serial.printf("http error: %i\n", httpCode);
+        #endif
+        refresh_retry++;
+      }
     } else {
       #ifdef DEBUG 
-        Serial.printf("http error: %s\n", http.errorToString(httpCode).c_str());
-      #endif    
+        Serial.println("Unable to connect to Spotify");
+      #endif
+      refresh_retry++;
     }
-  } else {
+    http.end();
+  }
+  
+  if(refresh_retry >= 5) {
+    enableSpotify = 0;
     #ifdef DEBUG 
-      Serial.println("Unable to connect to Spotify");
+      Serial.println("Call for accesstoken failed! Spotify message disabled.");
     #endif
   }
-  http.end();
- refresh_retry++; 
- } else {
-  enableSpotify=0;
-  refresh_retry = 0;
-  #ifdef DEBUG 
-    Serial.println("Call for accesstoken failed! Spotify message disabled.");
-  #endif
- }
 }
 
 
@@ -1601,7 +1617,7 @@ void parseSpotify(){                                  // calls Spotify api with 
       snprintf(spotify, sizeof(spotify), "%s (!=200)", msgSpotifyProb);         // information on spotify.html if no data available
       snprintf(spotifycover, sizeof(spotifycover), "/Spotprob.jpg");
       #ifdef DEBUG 
-        Serial.printf("http error: %s\n", http.errorToString(httpCode).c_str());
+        Serial.printf("http error: %i\n", httpCode);
       #endif 
     }
   } else {
@@ -2029,20 +2045,15 @@ void handleAdvanced (){                                                  // proc
 
       snprintf(messages[t], sizeof(messages[t]), "%s",server.arg(two).c_str());
 
-      String effin = server.arg(one).c_str();
-      catalogTEMP[t].effectinTEMP = effin.toInt();
+      catalogTEMP[t].effectinTEMP = server.arg(one).toInt();
 
-      String effout = server.arg(three).c_str();
-      catalogTEMP[t].effectoutTEMP = effout.toInt();
+      catalogTEMP[t].effectoutTEMP = server.arg(three).toInt();
 
-      String justi = server.arg(four).c_str();
-      catalogTEMP[t].justTEMP = justi.toInt();
+      catalogTEMP[t].justTEMP = server.arg(four).toInt();
 
-      String speedi = server.arg(five).c_str();
-      catalogTEMP[t].speedTEMP = speedi.toInt();
+      catalogTEMP[t].speedTEMP = server.arg(five).toInt();
 
-      String pausi = server.arg(six).c_str();
-      catalogTEMP[t].pauseTEMP = pausi.toInt();
+      catalogTEMP[t].pauseTEMP =  server.arg(six).toInt();
 
       catalogTEMP[t].delayTEMP = 1;
 
@@ -2126,8 +2137,7 @@ void saveAllMessages (){                                                        
   }
   File f = SPIFFS.open(path, "w"); 
   for (int t=0; t<4; t++){
-    String provi = messages[t];
-    f.printf("%i{%i{%s{%i{%i{%i{%i\n", enablemessage[t], catalogTEMP[t].effectinTEMP, provi.c_str(), catalogTEMP[t].effectoutTEMP, catalogTEMP[t].justTEMP, catalogTEMP[t].speedTEMP, catalogTEMP[t].pauseTEMP);
+    f.printf("%i{%i{%s{%i{%i{%i{%i\n", enablemessage[t], catalogTEMP[t].effectinTEMP, messages[t], catalogTEMP[t].effectoutTEMP, catalogTEMP[t].justTEMP, catalogTEMP[t].speedTEMP, catalogTEMP[t].pauseTEMP);
     }
   f.printf("%i\n%i\n%i\n%i\n%i\n%i\n%i\n", enableTime, enableDate, enableWeath, enableNews1, enableSpotify, enableNews2, enableOwn);
   f.close();
@@ -2436,8 +2446,8 @@ void resetDevice(){               // restarts device
 void refreshNews(){               // refreshes news data
   P.setFont(tobFont);
   P.print("getting news");
-  delay(500);
   getNewsData();
+  delay(500);
   P.displayReset();
   P.displayAnimate();
   P.displayClear();
@@ -2447,8 +2457,8 @@ void refreshNews(){               // refreshes news data
 void refreshWeather(){            // refreshes weather data
   P.setFont(tobFont);
   P.print("getting weath");
-  delay(500);
   getWeatherData();
+  delay(500);
   P.displayReset();
   P.displayAnimate();
   P.displayClear();   
