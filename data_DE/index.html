@@ -1,6 +1,8 @@
 ﻿<!-- 
 Tobers Multidisplay by ElToberino (c) 2020
 for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+
+Updated Javascript with Multidisplay V 1.1
 -->
 
 <!doctype html>
@@ -12,14 +14,15 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>Deine Nachricht auf dem Display</title>
   <SCRIPT>
-        enabled = 1;    // globale variable
+        var enabled = 1;
 		 
         window.addEventListener('load', () => {
-		 once();
+		 once(0);
 		 })
 		  
-        function once() {
-          fetch('/showSimple')
+        function once(reload) {
+		  setTimeout(function() {						// for setTimeout see: https://www.a-coding-project.de/ratgeber/javascript/delay 
+			fetch('/showSimple')
 			  .then(response => {
 				return response.json()
 				})
@@ -39,7 +42,11 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				 else {
 					document.getElementById("ownmessage").innerHTML = data.No1;
 					document.getElementById("eins").value = data.No1;
-					document.getElementById("eins").select();                 //Feld markieren
+					document.getElementById("eins").select();
+					if (reload == 1) {
+						document.getElementById("warning").innerHTML = "<br><b>wird beim nächsten Durchlauf angezeigt</b><br>";
+						document.getElementById("showbox").className = "greensign";
+						}
 				    }
 				console.log(data)
 				})
@@ -48,18 +55,12 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				 document.getElementById("warning").innerHTML = "Daten konnten nicht geladen werden!";
 				 document.getElementById("showbox").className = "redsign";
 				})
+		  } , 250);
 		}
-				
-			
-		
-				
+						
 		function SendeFunction() {
 			document.getElementById("formu").submit();
-			sleep(200);
-			once();
-			sleep(200);
-			document.getElementById("warning").innerHTML = "<br><b>wird beim nächsten Durchlauf angezeigt</b><br>";
-			document.getElementById("showbox").className = "greensign";
+			once(1);			
 		}			
 		
 		

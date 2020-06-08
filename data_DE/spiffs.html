@@ -2,6 +2,8 @@
 Tobers Multidisplay by ElToberino (c) 2020
 for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 SPIFFS functions and this html/js functions taken and adopted from https://fipsok.de/ (Jens Fleischer)
+
+Updated Javascript with Multidisplay V 1.1
 -->
 
 <!doctype html>
@@ -13,7 +15,15 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>Spiffsverwaltung</title>
   <SCRIPT>
-        function list() {
+  
+		var delayTime = 10;						// FIX: comment out these two lines to circumvent ESP32 problem with chrome
+		var chromium = false;
+		
+		//var delayTime = 200;					// FIX: uncomment these two lines to circumvent ESP32 problem with chrome
+        //var chromium = true;
+		
+		function list() {
+		 setTimeout(function(){
            let myList = document.querySelector('main');
            fetch('json').then(function (response) {
              return response.json();
@@ -28,7 +38,10 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
              myList.insertAdjacentHTML('beforeend', `<div class="proform">SPIFFS belegt ${json[i].usedBytes} von ${json[i].totalBytes}`);
              free = json[i].freeBytes;
            });
-         }
+		 }, delayTime);
+        }
+		 
+		 
          function fileSize() {
            var nBytes = document.querySelector('input').files[0].size, sOutput = `${nBytes} Byte`;
            var a = document.querySelector('span'), b = document.querySelector('[value="Upload"]');
@@ -53,8 +66,10 @@ SPIFFS functions and this html/js functions taken and adopted from https://fipso
 		 function confirmDel() {
           return confirm(`Soll diese Datei wirklich unwiderruflich gelöscht werden?`);
 		 }
-		 document.addEventListener('DOMContentLoaded', list);					// comment this out to circumvent ESP32 problem with chrome
-		 //window.addEventListener('load', list);								// uncomment this to circumvent ESP32 problem with chrome
+		 
+		 if (chromium == false) document.addEventListener('DOMContentLoaded', list);
+		 if (chromium == true) window.addEventListener('load', list);	
+		 
 </SCRIPT>
 </head>
 <body>

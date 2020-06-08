@@ -1,6 +1,8 @@
 <!-- 
 Tobers Multidisplay by ElToberino (c) 2020
 for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+
+Updated Javascript with Multidisplay V 1.1
 -->
 
 <!doctype html>
@@ -9,13 +11,29 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="Cache-control" content="no-cache">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css">   <!-- FIX: Delete this line to circumvent ESP32 problem with chrome-->
     <title>Message-Verwaltung</title>
-  <SCRIPT>
-        window.addEventListener('load', () => {
-		 buildform();
-		 requestCurrent(0);
+  <SCRIPT>											
+        
+		window.addEventListener('load', () => {
+			buildform();
+		 
+			requestCurrent(0,10);					// FIX: comment this out to circumvent ESP32 problem with chrome
+		 
+			//css()									// FIX: uncomment these two lines to circumvent ESP32 problem with chrome
+			//.then(() => requestCurrent(0,800)); 	//
 		 })
+		 
+		 function css(){
+		  setTimeout(function(){ 
+			var link = document.createElement('link');
+			link.setAttribute("rel", "stylesheet");
+			link.setAttribute("type", "text/css");
+			link.setAttribute("href", 'style.css');
+			document.getElementsByTagName("head")[0].appendChild(link);
+		  },300);
+		  return Promise.resolve(true);
+		}
 		 
 		function buildform() {
 			var myobject = {
@@ -140,8 +158,9 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 		
 		 
 		  
-        function requestCurrent(green) {                                           //calls all data from server
-          fetch('/showAdvanced')
+        function requestCurrent(green, delaytime) {                                           //calls all data from server
+          setTimeout(function() {
+		  fetch('/showAdvanced')
 			  .then(response => {
 				return response.json()
 				})
@@ -189,7 +208,10 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 	            document.getElementById("success").innerHTML = "Daten konnten nicht geladen werden!";
 				document.getElementById("showbox").className = "redsignpro";
 				})
+			 }, delaytime);
 			}
+			
+			
 			
 			function trick(){                                               //validates input and calls submit function
 				toberREGEX = /[\}\{\\\"]/;
@@ -220,9 +242,8 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				
 				document.getElementById(formName).submit();
 				document.getElementById("showbox").className = "invisible";
-				sleep(500);  // nötig?
 				document.getElementById("action").innerHTML = message;
-				requestCurrent(1);
+				requestCurrent(1, 200);
 				}
 			
 			

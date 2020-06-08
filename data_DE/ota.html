@@ -19,7 +19,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 		 })
 		
 		function once() {
-		 
+		 setTimeout(function() {
           fetch('/sketchName')
 			  .then(response => {
 				return response.json()
@@ -34,7 +34,8 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				document.getElementById("currentBox").style.background = "red";
                 document.getElementById("currentName").innerHTML = "&nbspSketchname konnte nicht geladen werden!";
 				})
-			}
+		 }, 250);
+		}
                 
 		
 		
