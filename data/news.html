@@ -1,6 +1,8 @@
 ﻿<!-- 
 Tobers Multidisplay by ElToberino (c) 2020
 for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+
+Updated Javascript with Multidisplay V 1.1
 -->
 
 <!doctype html>
@@ -13,9 +15,11 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <title>News Summary</title>
   <SCRIPT>
   window.addEventListener('load', () => {
-		 uno();
-		  //if (navigator.userAgent.indexOf("Chrome") > -1) sleep(1000);     // uncomment this to circumvent ESP32 problem with chrome
-		 due();
+		 uno();							 		// FIX: comment out these two lines to circumvent ESP32 problem with chrome
+		 due();						     		//
+		 
+		 //setTimeout(uno, 250);			 	// FIX: uncomment these two lines to circumvent ESP32 problem with chrome
+		 //setTimeout(due, 1200);            	//
 		 })
 		  
         function uno() {

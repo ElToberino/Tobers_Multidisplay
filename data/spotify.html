@@ -1,6 +1,8 @@
 ﻿<!-- 
 Tobers Multidisplay by ElToberino (c) 2020
 for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+
+Updated Javascript with Multidisplay V 1.1
 -->
 
 <!doctype html>
@@ -12,13 +14,16 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>Spotify Info</title>
   <SCRIPT>
+        
         window.addEventListener('load', () => {
-		//sleep(50);											// uncomment this to circumvent ESP32 problem with chrome
-		 once();
+		 
+		 once(10);									// FIX: comment this out to circumvent ESP32 problem with chrome		 
+		 //once(200);								// FIX: uncomment this to circumvent ESP32 problem with chrome
 		 })
 		  
-        function once() {
-          fetch('/cover')
+        function once(delay) {
+		  setTimeout(function(){
+			fetch('/cover')
 			  .then(response => {
 				return response.json()
 				})
@@ -34,6 +39,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
                  // Do something for an error here
 				 document.getElementById("Songinfo").innerHTML = "ERROR: Couldn't load data!";
 				})
+		  }, delay);
 		}
 				
 		function sleep(miliseconds) {

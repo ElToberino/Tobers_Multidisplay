@@ -1,6 +1,8 @@
 ﻿<!-- 
 Tobers Multidisplay by ElToberino (c) 2020
 for further information see: https://github.com/ElToberino/Tobers_Multidisplay
+
+Updated Javascript with Multidisplay V 1.1
 -->
 
 <!doctype html>
@@ -9,15 +11,38 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="Cache-control" content="no-cache">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css">   <!-- FIX: Delete this line to circumvent ESP32 problem with chrome-->
     <title>Configuration</title>
   <SCRIPT>
-        window.addEventListener('load', () => {
-		once();
-		 })
 		
-		function once() {
+		var NewsDelaytime = 1000;					// FIX: comment this out to circumvent ESP32 problem with chrome
+		//var NewsDelaytime = 4000;				// FIX: uncomment this to circumvent ESP32 problem with chrome
+		
+		
+		
+		window.addEventListener('load', () => {
+		
+			once(10);							// FIX: comment this out to circumvent ESP32 problem with chrome
+		
+			//css()								// FIX: uncomment these two lines to circumvent ESP32 problem with chrome
+			//.then(() => once(800)); 			//
+			
+		 })
 		 
+		function css(){
+		  setTimeout(function(){ 
+			var link = document.createElement('link');
+			link.setAttribute("rel", "stylesheet");
+			link.setAttribute("type", "text/css");
+			link.setAttribute("href", 'style.css');
+			document.getElementsByTagName("head")[0].appendChild(link);
+		  },300);
+		  return Promise.resolve(true);
+		}
+		
+		
+		function once(delaytime) {
+		 setTimeout(function() {
           fetch('/showConfig')
 			  .then(response => {
 				return response.json()
@@ -43,23 +68,22 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				console.log(data)
 				})
 			.catch(err => {
-                document.getElementById("showbox").innerHTML = "No connection to display !";
+                document.getElementById("showbox").innerHTML = "No connection to display!";
 			    document.getElementById("showbox").className = "configred";
 				})
-				}
+			}, delaytime);
+		}
 		
         function SendeFunction() {
 		    document.getElementById("formu").submit();
-			sleep(1000);
-			once();
+			once(200);
 			document.getElementById("showbox").innerHTML = "Intensity successfully set !";
 			document.getElementById("showbox").className = "configgreen";
 			}
 		
 		function SendeFunctionSP() {
 		    document.getElementById("formuSP").submit();
-			sleep(1000);
-			once();
+			once(200);
 			document.getElementById("showbox").innerHTML = "Speed successfully set !";
 			document.getElementById("showbox").className = "configgreen";
 			}
@@ -75,8 +99,7 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 			if (document.getElementById("CheckXL").checked == true) { document.getElementById("EnableXL").value = 1;}    //transforms "checked" attributes to values in hidden input
 			else {document.getElementById("EnableXL").value = 0;}
 		    document.getElementById("formu1").submit();
-			sleep(1000);
-			once();
+			once(NewsDelaytime);
 			document.getElementById("showbox").innerHTML = "Reloading News";
 			document.getElementById("showbox").className = "configgreen";
 			}
@@ -88,19 +111,17 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 			}			
 			
 		function SendeFunction3() {
-		    var checkres = confirm('Do you really want to restart the display?');
+		    var checkres = confirm('Dou you really want to restart the display?');
 			if (checkres == true) {
 		    document.getElementById("formu3").submit();
-			document.getElementById("showbox").innerHTML = "Display has been restarted";
-			document.getElementById("showbox").className = "configgreen";
-			sleep(8000);
-			once();
+			setTimeout( function() {
+				document.getElementById("showbox").innerHTML = "Display restarted";
+				document.getElementById("showbox").className = "configgreen";
+				}, 8000);		
+			once(10);
 			 }
 			}			
-		
-		
-		
-		
+					
 		function SendeFunction4() {
 		    var checkdel = confirm('Do you really want to erase your WiFi Login Data?\nDisplay will restart in AP mode.');
 			if (checkdel == true) {
