@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.1 - 08.06.2020
+//    V 1.2 - 10.02.2021
 //
 //    *********************************************
 //
@@ -14,7 +14,7 @@
 //    Configuration and settings are made via web interface.
 //    For instructions and further information see: https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9
 //
-//    Copyright (c) 2020 Tobias Schulz
+//    Copyright (c) 2020,2021 Tobias Schulz
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -31,16 +31,16 @@
 //
 //    ***************************************************************
 //
-//    successfully compiled with ARDUINO IDE 1.8.12
+//    successfully compiled with ARDUINO IDE 1.8.12, 1.8.13
 //
 //    required board installation:
-//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1
+//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4
 //    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4
 //
 //    required libraries:
-//    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.2.1
-//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.2.0
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.15.2
+//    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.3.0
+//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.5.5
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.17.2
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -67,12 +67,14 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.0 -> V 1.1:  - bugfix in function refreshSpotify()
-//                               - small change in getTimeFromServer() due to new ESP8266 Core 2.7.0
-//                               - some small code simplifications in handleAdvanced() and saveAllMessages()
-//                               - small fix in parseSpotify()
-//                               - small fix in serial.printf functions showing http code
-//                               - small changes in some html sites
+//    CHANGELOG V 1.1 -> V 1.2:  - bugfix in date function:
+//                                -> forced call of makeDate() in Setup to enable writing in dayAfterTomorrow
+//                                -> changes in makeDate(), displayTime(), displayOnlyTime()
+//                               - change in getWeatherData(): respected difference between rainfall and snowfall, new string "msgSnow"
+//                               - change in wificonnect(): added restart after config portal timeout (NOTE: You must have installed the current(!) version of my fork of WifiManager library)
+//                               - simplification of html authentication functions
+//                               - rework of celsius and fahrenheit character
+//                               - changed news server call interval to 60 minutes due to reduced limit of newsapi.org (100 calls/day)
 //
 //    ***************************************************************
 
@@ -239,7 +241,7 @@ const String ownNewsSources[] = {                                   // your inid
   "top-headlines?sources=bbc-news",                                 // IMPORTANT NOTE -> changes of number of elements require changes in functions getNews(), composeNews() and on news.html site !!!
   "everything?domains=politico.eu",
   "top-headlines?sources=cnn",
-  "top-headlines?sources=the-washington-post"
+  "everything?domains=washingtonpost.com"
 };
 
 
@@ -346,8 +348,8 @@ bool timeOnly = false;                          // if true, display shows only t
 
 // Own characters
 
-uint8_t degreeC[] = { 6, 3, 3, 56, 68, 68, 68 };   // Degree Celsius character          // online font-editor available at: https://pjrp.github.io/MDParolaFontEditor
-uint8_t degreeF[] = { 6, 3, 3, 124, 20, 20, 4 };   // Degree Fahrenheit character
+uint8_t degreeC[] = {9, 3, 3, 0, 62, 65, 65, 65, 65, 0 };   // online font-editor available at: https://pjrp.github.io/MDParolaFontEditor  
+uint8_t degreeF[] = { 9, 3, 3, 0, 127, 9, 9, 9, 1, 0 };
 uint8_t degreeC_ascii = 0x8F;                      // defines position 143 in UTF-8 table
 uint8_t degreeF_ascii = 0x90;                      // defines position 144 in UTF-8 table
 
@@ -698,6 +700,7 @@ bildlein sprite[] =
   const char msgHumidity[] PROGMEM=                          "Luftfeuchte";
   const char msgClouds[] PROGMEM=                            "Bewölkung";
   const char msgRain[] PROGMEM=                              "Niederschlag";
+  const char msgSnow[] PROGMEM=                              "Schneemenge";
   const char msgWind[] PROGMEM=                              "Wind";
   const char msgNetwork[] PROGMEM=                           "Verbunden mit Netzwerk:";
   const char msgAs[] PROGMEM=                                "als";
@@ -725,7 +728,8 @@ bildlein sprite[] =
   const char msgTemp[] PROGMEM=                              "temperature";
   const char msgHumidity[] PROGMEM=                          "humidity";
   const char msgClouds[] PROGMEM=                            "clouds";
-  const char msgRain[] PROGMEM=                              "rain";
+  const char msgRain[] PROGMEM=                              "rainfall";
+  const char msgSnow[] PROGMEM=                              "snowfall";
   const char msgWind[] PROGMEM=                              "wind";
   const char msgNetwork[] PROGMEM=                           "Connected to network:";
   const char msgAs[] PROGMEM=                                "as";
@@ -816,8 +820,18 @@ void wificonnect(){                                                   // read ht
         WiFiManager wifiManager;
       #ifndef SPOTIFY                                                         // this doesn't work with SPOTIFY defined on ESP32 !
         wifiManager.setAPStaticIPConfig(AP_IP, AP_IP, AP_Netmask);            // if #define SPOTIFY default ESP IP 192.168.4.1 is set
-      #endif 
+      #endif
+        wifiManager.setConfigPortalTimeout(300);                              // timeout for configportal in seconds
         wifiManager.startConfigPortal(AP_NAME, AP_PW);
+
+         if (wifiManager.getTimeoutState() == true) {                         // if config portal has timed out, ESP restarts (-> necessary after a power blackout, when WiFi network needs some time to start up again)
+          #ifdef DEBUG
+            Serial.println("Config Portal has timed out. Restarting...");
+          #endif
+          delay(500);
+          ESP.restart();  
+        }
+        
         wifiManagerWasCalled = true;
              
         if (wifiManager.getStaticMode() == true) {                            // gets information from WiFiManager if connection has been made with static IP
@@ -1028,19 +1042,21 @@ void makeDate() {
   time_t now = time(&now);
   localtime_r(&now, &tm);
 
-  #ifdef SHORTDATE
-    strftime (buf1, sizeof(buf1), "%e", &tm);                                                           // see: http://www.cplusplus.com/reference/ctime/strftime/
-    snprintf (buf2, sizeof(buf2), "%s", months[tm.tm_mon]);                                             // see: http://www.willemer.de/informatik/cpp/timelib.htm
-    strftime (buf3, sizeof(buf3), "%Y", &tm);
-    snprintf (dateshow, sizeof(dateshow), "%s%s %s %s", buf1,msgOrdinalNumber, buf2, buf3);                // Example: 1 Mar 2020 / 1. Mrz 2020
-  #else
-    snprintf (buf1, sizeof(buf1), "%s", days[tm.tm_wday]);
-    strftime (buf2, sizeof(buf2), "%e", &tm);
-    snprintf (buf3, sizeof(buf3), "%s", monthsXL[tm.tm_mon]);
-    strftime (buf4, sizeof(buf4), "%Y", &tm);
-    snprintf (dateshow, sizeof(dateshow), "%s %s%s %s %s", buf1, buf2, msgOrdinalNumber, buf3, buf4);     // Example: Sunday 1 March 2020 / Sonntag 1. März 2020
-    utf8AsciiConvert(dateshow, dateshow);        // conversion necessary for "Jänner" and "März"
-  #endif
+  if (enableDate == 1){
+    #ifdef SHORTDATE
+      strftime (buf1, sizeof(buf1), "%e", &tm);                                                           // see: http://www.cplusplus.com/reference/ctime/strftime/
+      snprintf (buf2, sizeof(buf2), "%s", months[tm.tm_mon]);                                             // see: http://www.willemer.de/informatik/cpp/timelib.htm
+      strftime (buf3, sizeof(buf3), "%Y", &tm);
+      snprintf (dateshow, sizeof(dateshow), "%s%s %s %s", buf1,msgOrdinalNumber, buf2, buf3);                // Example: 1 Mar 2020 / 1. Mrz 2020
+    #else
+      snprintf (buf1, sizeof(buf1), "%s", days[tm.tm_wday]);
+      strftime (buf2, sizeof(buf2), "%e", &tm);
+      snprintf (buf3, sizeof(buf3), "%s", monthsXL[tm.tm_mon]);
+      strftime (buf4, sizeof(buf4), "%Y", &tm);
+      snprintf (dateshow, sizeof(dateshow), "%s %s%s %s %s", buf1, buf2, msgOrdinalNumber, buf3, buf4);     // Example: Sunday 1 March 2020 / Sonntag 1. März 2020
+      utf8AsciiConvert(dateshow, dateshow);        // conversion necessary for "Jänner" and "März"
+    #endif
+  }
 
   weekday = tm.tm_wday;
   switch (weekday) {
@@ -1090,9 +1106,7 @@ void displayTime() {                                                            
   }
     
   if (tm.tm_hour == 3 && tm.tm_min == 0 && tm.tm_sec == 0) getTimeFromServer();     // at 03:00 get the current time for readjusting and rereading DST
-  if (enableDate == 1){
-    if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();            // at 0:00 make new date
-  }
+  if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
 }
 
 
@@ -1115,9 +1129,7 @@ void displayOnlyTime() {                                                        
    }
     
   if (tm.tm_hour == 3 && tm.tm_min == 0 && tm.tm_sec == 0) getTimeFromServer();
-  if (enableDate==1){
-    if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();
-  }
+  if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();
 }
 
 
@@ -1191,12 +1203,22 @@ void getWeatherData() {                                              //gets weat
             float wind_speed = doc["wind"]["speed"];        // 0.5
             int wind_deg = doc["wind"]["deg"];              // 260
             float rain_3h = doc["rain"]["3h"];              // 0.19
+            float snow_3h = 0;
+            snow_3h = doc["snow"]["3h"];
+             
             uint8_t current_clouds = doc["clouds"]["all"];  // 25
             const char* cityname = doc["name"];             // Vienna
 
-            snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s %s: %s, %s %2.1f %c  %s %d%%  %s %d%%  %s %3.1f mm  %s %2.0f m/s %s", 
+            char msgNiederschlag_3h[20];
+            if (snow_3h == 0){
+              snprintf(msgNiederschlag_3h, sizeof(msgNiederschlag_3h),"%s %.1f mm", msgRain, rain_3h);
+            } else {
+              snprintf(msgNiederschlag_3h, sizeof(msgNiederschlag_3h),"%s %.1f cm", msgSnow, snow_3h);
+            }
+
+            snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
             msgCurrentWeather, cityname, current_description, msgTemp, current_temp, tempUnit, msgHumidity, current_humidity, msgClouds, current_clouds,
-            msgRain, rain_3h, msgWind, wind_speed, getWindDirection(wind_deg).c_str());
+            msgNiederschlag_3h, msgWind, wind_speed, getWindDirection(wind_deg).c_str());
 
             utf8AsciiConvert(table[w].wetcur, table[w].wetcur);
       
@@ -1219,6 +1241,8 @@ void getWeatherData() {                                              //gets weat
             float windspeed24 = list_7["wind"]["speed"];                   // 3.1
             int winddeg24 = list_7["wind"]["deg"];                         // 202
             float rain24 = list_7["rain"]["3h"];
+            float snow24 = 0;
+            snow24 = list_7["snow"]["3h"];
 
             JsonObject list_15 = list[15];
             const char* time15 = list_15["dt_txt"];
@@ -1235,6 +1259,23 @@ void getWeatherData() {                                              //gets weat
             float windspeed48 = list_15["wind"]["speed"];
             int winddeg48 = list_15["wind"]["deg"];
             float rain48 = list_15["rain"]["3h"];
+            float snow48 = 0;
+            snow48 = list_15["snow"]["3h"];
+
+            char msgNiederschlag_24h[20];
+            if (snow24 == 0){
+              snprintf(msgNiederschlag_24h, sizeof(msgNiederschlag_24h),"%s %.1f mm", msgRain, rain24);
+            } else {
+              snprintf(msgNiederschlag_24h, sizeof(msgNiederschlag_24h),"%s %.1f cm", msgSnow, snow24);
+            }
+
+            char msgNiederschlag_48h[20];
+            if (snow48 == 0){
+              snprintf(msgNiederschlag_48h, sizeof(msgNiederschlag_48h),"%s %.1f mm", msgRain, rain48);
+            } else {
+              snprintf(msgNiederschlag_48h, sizeof(msgNiederschlag_48h),"%s %.1f cm", msgSnow, snow48);
+            }
+            
 
             JsonObject city = doc["city"];
             const char* cityname = city["name"];                              // "Vienna"
@@ -1248,14 +1289,14 @@ void getWeatherData() {                                              //gets weat
             char forecast24[200] = {""};
             char forecast48[200] = {""};
 
-            snprintf(forecast24, sizeof(forecast24), "%s %s, %s %s %s: %s, %s %2.1f %c  %s %d%%  %s %d%%  %s %3.1f mm  %s %2.0f m/s %s", 
+            snprintf(forecast24, sizeof(forecast24), "%s %s, %s %s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
             msgForecast, cityname, msg24, time24, msghour, description24, msgTemp, temp24, tempUnit, msgHumidity, humidity24, msgClouds, clouds24,
-            msgRain, rain24, msgWind, windspeed24, getWindDirection(winddeg24).c_str());
+            msgNiederschlag_24h, msgWind, windspeed24, getWindDirection(winddeg24).c_str());
             utf8AsciiConvert(forecast24, forecast24);
 
-            snprintf(forecast48, sizeof(forecast48), "%s %s, %s %s %s: %s, %s %2.1f %c  %s %d%%  %s %d%%  %s %3.1f mm  %s %2.0f m/s %s", 
+            snprintf(forecast48, sizeof(forecast48), "%s %s, %s %s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
             msgForecast, cityname, dayAfterTomorrow, time48, msghour, description48, msgTemp, temp48, tempUnit, msgHumidity, humidity48, msgClouds, clouds48,
-            msgRain, rain48, msgWind, windspeed48, getWindDirection(winddeg48).c_str());
+            msgNiederschlag_48h, msgWind, windspeed48, getWindDirection(winddeg48).c_str());
             utf8AsciiConvert(forecast48, forecast48);
             snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s    %s", forecast24, forecast48);
           }
@@ -1662,39 +1703,19 @@ void loadSpotifyAuth() {                                                      //
 /// SPIFFS AND WEBSERVER FUNCTIONS ///
 
 
-void html_authentify_pro() {                                                              // verifies authentication for call of html page
+void html_authentify (String& site) {                                                              // verifies authentication for calls via webserver
   if (!server.authenticate(www_username, www_password)) {
       return server.requestAuthentication();
     } 
   if (server.hasArg("delete")) {
-        SPIFFS.remove(server.arg("delete"));                                              // deletes file
+        SPIFFS.remove(server.arg("delete"));                                                      // deletes file
         server.sendHeader("Location","/spiffs.html");
         server.send(303);
   } else {
-        File f = SPIFFS.open("/admin.html", "r"); server.streamFile(f, "text/html"); f.close(); 
-  }
-}
- 
-
-void html_authentify_config() {
-  if (!server.authenticate(www_username, www_password)) {
-      return server.requestAuthentication();
-    }
-  if (server.hasArg("delete")) {
-        SPIFFS.remove(server.arg("delete"));                                                          
-        server.sendHeader("Location","/spiffs.html");
-        server.send(303);
-  } else {
-        File f = SPIFFS.open("/config.html", "r"); server.streamFile(f, "text/html"); f.close(); 
+        File f = SPIFFS.open(site, "r"); server.streamFile(f, contentType(site)); f.close(); 
   }
 }
 
-void html_authentify_spiffs() {
-  if (!server.authenticate(www_username, www_password)) {
-      return server.requestAuthentication();
-    }
-   File f = SPIFFS.open("/spiffs.html", "r"); server.streamFile(f, "text/html"); f.close();
-}
 
 void html_authentify_ota() {
   if (!server.authenticate(www_username, www_password)) {
@@ -1760,7 +1781,11 @@ bool handleFile(String&& path) {
   }
   if (!SPIFFS.exists("/spiffs.html"))server.send(200, "text/html", Helper);                       // enables uploading a file before spiffs.html is present on SPIFFS:
   if (path.endsWith("/")) path += "index.html";
-  return SPIFFS.exists(path) ? ({File f = SPIFFS.open(path, "r"); server.streamFile(f, contentType(path)); f.close(); true;}) : false;
+  if (path == "/admin.html" || path == "/config.html" || path == "/spiffs.html"){
+    return SPIFFS.exists(path) ? ({html_authentify(path); true;}) : false;
+  } else {
+    return SPIFFS.exists(path) ? ({File f = SPIFFS.open(path, "r"); server.streamFile(f, contentType(path)); f.close(); true;}) : false;
+  }
 }
 
 
@@ -2540,9 +2565,6 @@ void listener() {                                                  // handles al
   server.on("/weather", refreshWeather);
   server.on("/ex", clearCredentials);
   server.on("/cover", showCover);
-  server.on("/admin.html", html_authentify_pro);
-  server.on("/config.html", html_authentify_config);
-  server.on("/spiffs.html", html_authentify_spiffs);
   server.on("/ota.html", html_authentify_ota);
   server.on("/sketchName", sendSketchName);
   
@@ -2672,6 +2694,7 @@ void setup(void){
 
   if(AP_established == false){                      // normal operation with wifi connection
       getTimeFromServer();                          // calls time server for current time
+      makeDate();                                   // forced call to enable writing into of dayAfterTomorrow
     #ifdef ESP32  
       loadAllMessages(0, false);                    // loads messages and messages config saved in SPIFFS
     #else
@@ -2757,7 +2780,7 @@ if (timeOnly==1) {                // if all messages except time are deactivated
   }
 
 
-  if (millis() - previousnewscall > (20* 60000) && P.displayAnimate()){            // getting new news data from server and synchronising time every 20 minutes
+  if (millis() - previousnewscall > (60* 60000) && P.displayAnimate()){            // getting new news data from server and synchronising time every 60 minutes
    if(AP_established == false){ 
     getTimeFromServer();
    }
