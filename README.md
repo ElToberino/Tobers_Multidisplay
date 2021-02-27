@@ -23,7 +23,7 @@ Max7219 8x8 LED matrix modules (My display is made of eight modules)<br>
 
 * *Recommended tools:*<br>
 [ESP8266 Sketch Data Upload](https://github.com/esp8266/arduino-esp8266fs-plugin)<br>
-[ESP8266 Sketch Data Upload](https://github.com/me-no-dev/arduino-esp32fs-plugin)<br>
+[ESP32 Data Upload Tool](https://github.com/me-no-dev/arduino-esp32fs-plugin)<br>
 
 * *Required accounts:*<br>
 WEATHER: personal api key from [openweathermap.org](https://openweathermap.org/)<br>
@@ -31,7 +31,7 @@ NEWS: personal api key from [newsapi.org/](https://newsapi.org/)<br>
 SPOTIFY: (free or premium) account AND [developer registration of your device](https://developer.spotify.com/dashboard/)<br>
 <br>
 
-**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hacktser.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and a video there.**<br><br>
+**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hackster.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and a video there.**<br><br>
 
 **Credits**<br>
 This project wouldn't have been possible without the work of many others:
