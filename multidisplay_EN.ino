@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.2 - 10.02.2021
+//    V 1.3 - 21.03.2021
 //
 //    *********************************************
 //
@@ -35,12 +35,12 @@
 //
 //    required board installation:
 //    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4
-//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4
+//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5
 //
 //    required libraries:
 //    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.3.0
-//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.5.5
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.17.2
+//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.5.6
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.17.3
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -67,15 +67,13 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.1 -> V 1.2:  - bugfix in date function:
-//                                -> forced call of makeDate() in Setup to enable writing in dayAfterTomorrow
-//                                -> changes in makeDate(), displayTime(), displayOnlyTime()
-//                               - change in getWeatherData(): respected difference between rainfall and snowfall, new string "msgSnow"
-//                               - change in wificonnect(): added restart after config portal timeout (NOTE: You must have installed the current(!) version of my fork of WifiManager library)
-//                               - simplification of html authentication functions
-//                               - rework of celsius and fahrenheit character
-//                               - changed news server call interval to 60 minutes due to reduced limit of newsapi.org (100 calls/day)
-//
+//    CHANGELOG V 1.2 -> V 1.3:  - removed unnecessary call of getTimeFromServer() in displayTime(), displayOnlyTime() (automatic change from/to DST is already implemented in time config) 
+//                               - small change in function spoticallback() and new html file spotAuthFail.html
+//                               - due to changes in ESP32 core for Arduino V 1.0.5:     
+//                                  --> Spotify functions: switch to secure connection using certificate
+//                                  --> workaround for chromium based browsers no longer required due to fix in ESP32 core
+//                                 
+//                              
 //    ***************************************************************
 
 
@@ -268,7 +266,34 @@ const char* clientID = "XXXXXXXXXX";                                      // reg
 const char* clientSecret = "XXXXXXXXXX";
 
 const char* redirectUri = "http://esp.local/callback/";
-const char* fingerprint = "AB:BC:7C:9B:7A:D8:5D:98:8B:B2:72:A4:4C:13:47:9A:00:2F:70:B5";        // necessary for https connection, check here, e.g.: https://www.grc.com/fingerprints.htm
+                                                                                                // certificate necessary for https connection, must be updated if expired. 
+                                                                                                // certificate can be found by clicking the lock symbol in address field of your browser calling "spotify.com"
+                                                                                                //  --> used certificate "DigiCert Global Root CA" see: https://www.digicert.com/kb/digicert-root-certificates.htm
+const char PROGMEM digicert_CA_pem[] = R"%%%(
+-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
+QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB
+CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97
+nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt
+43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P
+T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4
+gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO
+BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR
+TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw
+DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr
+hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg
+06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF
+PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls
+YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
+CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
+-----END CERTIFICATE-----
+)%%%";
+
 
 String refreshtoken;                                                                            // necessary for getting access token
 String auth;                                                                                    // base64 encoded "client_id:client_secret"
@@ -348,8 +373,8 @@ bool timeOnly = false;                          // if true, display shows only t
 
 // Own characters
 
-uint8_t degreeC[] = {9, 3, 3, 0, 62, 65, 65, 65, 65, 0 };   // online font-editor available at: https://pjrp.github.io/MDParolaFontEditor  
-uint8_t degreeF[] = { 9, 3, 3, 0, 127, 9, 9, 9, 1, 0 };
+uint8_t degreeC[] = {9, 3, 3, 0, 62, 65, 65, 65, 65, 0 };   // Degree Celsius character     // online font-editor available at: https://pjrp.github.io/MDParolaFontEditor  
+uint8_t degreeF[] = { 9, 3, 3, 0, 127, 9, 9, 9, 1, 0 };     // Degree Fahrenheit character
 uint8_t degreeC_ascii = 0x8F;                      // defines position 143 in UTF-8 table
 uint8_t degreeF_ascii = 0x90;                      // defines position 144 in UTF-8 table
 
@@ -824,8 +849,8 @@ void wificonnect(){                                                   // read ht
         wifiManager.setConfigPortalTimeout(300);                              // timeout for configportal in seconds
         wifiManager.startConfigPortal(AP_NAME, AP_PW);
 
-         if (wifiManager.getTimeoutState() == true) {                         // if config portal has timed out, ESP restarts (-> necessary after a power blackout, when WiFi network needs some time to start up again)
-          #ifdef DEBUG
+         if (wifiManager.getTimeoutState() == true) {                         // if config portal has timed out, ESP restarts(necessary after power blackout, when WiFi network needs some time to start up again)
+          #ifdef DEBUG                                                        // (necessary after power blackout, when Home WiFi network needs some time to start up)
             Serial.println("Config Portal has timed out. Restarting...");
           #endif
           delay(500);
@@ -1105,7 +1130,6 @@ void displayTime() {                                                            
     }
   }
     
-  if (tm.tm_hour == 3 && tm.tm_min == 0 && tm.tm_sec == 0) getTimeFromServer();     // at 03:00 get the current time for readjusting and rereading DST
   if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
 }
 
@@ -1128,7 +1152,6 @@ void displayOnlyTime() {                                                        
     }
    }
     
-  if (tm.tm_hour == 3 && tm.tm_min == 0 && tm.tm_sec == 0) getTimeFromServer();
   if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();
 }
 
@@ -1461,9 +1484,9 @@ void spoticallback() {                               // handles complete Spotify
   #ifdef DEBUG 
     Serial.printf("Second Step: Received one time authentication token: %s  --> Calling for persistent refresh token...\n", oneTimeCode.c_str());
   #endif
-  bool authSuccess;
+  bool authSuccess = false;
   HTTPClient http;
-  if(http.begin("https://accounts.spotify.com/api/token", fingerprint)) {
+  if(http.begin("https://accounts.spotify.com/api/token", digicert_CA_pem)) {
     
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
     String completeAuth = "grant_type=authorization_code&code=" + oneTimeCode + "&redirect_uri=" + String(redirectUri) + "&client_id=" + String(clientID) + "&client_secret=" + String(clientSecret);
@@ -1524,7 +1547,12 @@ void spoticallback() {                               // handles complete Spotify
      
       char successUri[40];
       snprintf(successUri, sizeof(successUri), "http://%d.%d.%d.%d/spotAuthOK.html", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-      server.sendHeader("Location",String(successUri));                      // redirets to html-page with success message
+      server.sendHeader("Location",String(successUri));                     // redirets to html-page with success message
+      server.send(303);
+   } else {
+      char FailUri[40];
+      snprintf(FailUri, sizeof(FailUri), "http://%d.%d.%d.%d/spotAuthFail.html", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+      server.sendHeader("Location",String(FailUri));                        // redirets to html-page with fail message
       server.send(303);
    }
 }
@@ -1540,7 +1568,7 @@ void refreshSpotify(){                                                      // d
     #endif 
     HTTPClient http;
   
-    if(http.begin("https://accounts.spotify.com/api/token", fingerprint)){
+    if(http.begin("https://accounts.spotify.com/api/token", digicert_CA_pem)){
       http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
       http.addHeader("Authorization", auth);
   
@@ -1607,7 +1635,7 @@ void parseSpotify(){                                  // calls Spotify api with 
     Serial.println("Calling Spotify for currently playing");
   #endif
 
-  if(http.begin("https://api.spotify.com/v1/me/player/currently-playing", fingerprint)){
+  if(http.begin("https://api.spotify.com/v1/me/player/currently-playing", digicert_CA_pem)){
     http.addHeader("Accept", "application/json");
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", accesstoken);
@@ -1699,7 +1727,6 @@ void loadSpotifyAuth() {                                                      //
 
 
  
-
 /// SPIFFS AND WEBSERVER FUNCTIONS ///
 
 
@@ -1715,7 +1742,6 @@ void html_authentify (String& site) {                                           
         File f = SPIFFS.open(site, "r"); server.streamFile(f, contentType(site)); f.close(); 
   }
 }
-
 
 void html_authentify_ota() {
   if (!server.authenticate(www_username, www_password)) {
