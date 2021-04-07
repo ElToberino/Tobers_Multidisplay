@@ -1655,6 +1655,7 @@ void parseSpotify(){                                  // calls Spotify api with 
           Serial.println("deserializeJson() failed: ");
           Serial.println(error.c_str());
         #endif
+        return;
       }
       JsonObject item = doc["item"];
       JsonObject item_album = item["album"];
