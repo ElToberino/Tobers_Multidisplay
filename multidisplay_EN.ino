@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3 - 21.03.2021
+//    V 1.3.1 - 10.04.2021
 //
 //    *********************************************
 //
@@ -67,13 +67,12 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.2 -> V 1.3:  - removed unnecessary call of getTimeFromServer() in displayTime(), displayOnlyTime() (automatic change from/to DST is already implemented in time config) 
-//                               - small change in function spoticallback() and new html file spotAuthFail.html
-//                               - due to changes in ESP32 core for Arduino V 1.0.5:     
-//                                  --> Spotify functions: switch to secure connection using certificate
-//                                  --> workaround for chromium based browsers no longer required due to fix in ESP32 core
-//                                 
-//                              
+//    CHANGELOG V 1.3 -> V 1.3.1:  - bugfix in parseSpotify()
+//                                  --> added missing "return" in case of Json deserialization error
+//                                  --> change of Json document size from 8000 to 12000
+//                                 - bugfix in ota.html
+//
+//                                                               
 //    ***************************************************************
 
 
@@ -1645,7 +1644,7 @@ void parseSpotify(){                                  // calls Spotify api with 
     #endif 
     
     if(httpCode == 200) {
-      DynamicJsonDocument doc(8000);
+      DynamicJsonDocument doc(12000);
       DeserializationError error = deserializeJson(doc, http.getStream());
       if (error) {
         snprintf(showspotify, sizeof(showspotify), "");
@@ -1655,7 +1654,7 @@ void parseSpotify(){                                  // calls Spotify api with 
           Serial.println("deserializeJson() failed: ");
           Serial.println(error.c_str());
         #endif
-        return;
+		return;
       }
       JsonObject item = doc["item"];
       JsonObject item_album = item["album"];
