@@ -11,6 +11,19 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 	<meta http-equiv="Cache-control" content="no-cache">
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>OTA</title>
+	<STYLE>
+.red {
+	font-size:80%;
+	background-color:red;
+	color:white;
+	font-size:80%;
+	padding:0.5em 2em 0.5em 2em;
+}
+
+.free {
+	font-size:100%;	
+}
+	</STYLE>
   <SCRIPT>                 // accept file type: https://stackoverflow.com/questions/11832930/html-input-file-accept-attribute-file-type-csv
                            //see: https://stackoverflow.com/questions/43708127/javascript-get-the-filename-and-extension-from-input-type-file
 						   //and  https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript/1203361#1203361
@@ -45,16 +58,24 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 		var extension = path.substring(path.lastIndexOf('.')+1, path.length) || file;
 		var size = Math.round((document.getElementById("chosenfile").files[0].size)/1024);  //rounded size in KB
 		if (extension == "bin") {
+			document.getElementById("infobanner").style.display = "none";
 			document.getElementById("engage").removeAttribute('disabled');
 			document.getElementById("infobanner").innerHTML = "<div class=\"proform\" style=\"line-height:1.5;\">Datei:  <span style=\"font-weight:normal;\">" + file + "</span><br>Dateigröße:  <span style=\"font-weight:normal;\">" +size + " KB</span></div>";
 				}
-		else {document.getElementById("infobanner").innerHTML = ("Es sind nur Dateien vom Typ .bin zulässig");}
+		else {
+			document.getElementById("infobanner").className = "red";
+			document.getElementById("infobanner").style.display = "";
+			document.getElementById("engage").setAttribute('disabled', true);
+			document.getElementById("infobanner").innerHTML = ("Es sind nur Dateien vom Typ .bin zulässig");
+		}
 		}
 		
 		function confirmOTA() {
 		var confirmOTA = confirm('Soll das bestehende Programm wirklich überschrieben werden?');
 			if (confirmOTA == true) {
 			document.getElementById("OTAFile").submit();
+			document.getElementById("infobanner").className = "free";
+			document.getElementById("infobanner").style.display = "";
 			document.getElementById("infobanner").innerHTML = ("<div class=\"proform\" style=\"padding:0.5em;\">...updating...</div>");		
 			}
 		}
@@ -72,9 +93,9 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 <p>
 <div class="proform" id="currentBox" style="line-height:1.5;">aktueller Sketch: <span id="currentName" style="font-weight:normal;"></span></div>
 <div class="spiffsinput">
-<form id="OTAFile" action="/ota" method="POST" enctype="multipart/form-data" target="InfoFrame" onsubmit="confirmOTA()">
+<form id="OTAFile" action="/ota" method="POST" enctype="multipart/form-data" target="InfoFrame">
 <input id="chosenfile" type="file" name="upload" accept=".bin" onchange="typecheck()">
-<input id="engage" type="submit" value="Upload" disabled>
+<input id="engage" type="submit" value="Upload" disabled onclick="confirmOTA()">
 </form>
 </div>
 
