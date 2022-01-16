@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.1 - 10.04.2021
+//    V 1.3.2 - 16.01.2022
 //
 //    *********************************************
 //
@@ -14,7 +14,7 @@
 //    Configuration and settings are made via web interface.
 //    For instructions and further information see: https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9
 //
-//    Copyright (c) 2020,2021 Tobias Schulz
+//    Copyright (c) 2020-2022 Tobias Schulz
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -31,16 +31,18 @@
 //
 //    ***************************************************************
 //
-//    successfully compiled with ARDUINO IDE 1.8.12, 1.8.13
+//    successfully compiled with ARDUINO IDE 1.8.12 - 1.8.19
 //
 //    required board installation:
-//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4
-//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5
+//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4, 3.0.2
+//      ------->      V 2.7.4 strongly recommended - serving of files is much faster than in later versions!
+//
+//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5, V 1.0.6, V 2.0.2
 //
 //    required libraries:
 //    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.3.0
 //    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.5.6
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.17.3
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.19.1
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -67,10 +69,12 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3 -> V 1.3.1:  - bugfix in parseSpotify()
-//                                  --> added missing "return" in case of Json deserialization error
-//                                  --> change of Json document size from 8000 to 12000
-//                                 - bugfix in ota.html
+//    CHANGELOG V 1.3.1 -> V 1.3.2:  - bugfix to prevent JSON error in html in case of song info contains quotation marks
+//                                    --> change of escaping double quotation marks for msg spotify in parseSpotify()
+//                                    --> added String.replace double quotation mark by single quotation mark in showCover();
+//                                   - change in wificonnect() to re-enable WiFi connection on start up (disabled by default since ESP8266 core V 3.0)
+//                                   - fix in ota.html
+//                                   - fix in "getTimeFromServer()", new variable "ntp_getreachability"
 //
 //                                                               
 //    ***************************************************************
@@ -172,9 +176,10 @@ bool AP_established = false;                          // is set to true if WifiM
 ///// TIME SERVER AND DATE ////
 
 const char* timezone =  "CET-1CEST,M3.5.0/02,M10.5.0/03";       // = CET/CEST  --> for adjusting your local time zone see: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
-const char* ntpServer = "europe.pool.ntp.org";                         //pool.ntp.org       // server pool prefix "2." could be necessary with IPv6
+onst char* ntpServer = "europe.pool.ntp.org";                         //pool.ntp.org       // server pool prefix "2." could be necessary with IPv6
 
 struct tm tm;
+extern "C" uint8_t sntp_getreachability(uint8_t);               // shows reachability of NTP Server (value != 0 means server could be reached) see explanation in http://savannah.nongnu.org/patch/?9581#comment0:
 
 #ifdef LOCAL_LANG
   const char* const PROGMEM days[] { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag" } ;
@@ -776,6 +781,11 @@ bildlein sprite[] =
 
 
 void wificonnect(){                                                   // read https://forum.arduino.cc/index.php?topic=652513 to understand how WiFi setup works on ESP
+
+  #ifdef WIFI_IS_OFF_AT_BOOT                                          // enables WiFi connection on start up (restores original ESP8266 behaviour, which is disabled by default since ESP8266 core V 3.0)
+    enableWiFiAtBootTime();                                           // see: https://github.com/esp8266/Arduino/blob/master/doc/esp8266wifi/generic-class.rst#persistent
+  #endif
+  
   uint8_t  wifi_retry=0;                                              // Counter solves ESP32-Bug with certain routers where connection can only be established every second time
   uint8_t  staticIP = 0;
 
@@ -802,7 +812,7 @@ void wificonnect(){                                                   // read ht
   f.close();
 
   #ifdef DEBUG
-    Serial.println("IP Configuartion loaded from SPIFFS:");
+    Serial.println("IP Configuration loaded from SPIFFS:");
     Serial.print("Static IP enabled: ");
     Serial.println(staticIP);
     if (staticIP == 1) {
@@ -1027,8 +1037,10 @@ void getTimeFromServer(){
    }                            
   #endif 
    delay(500);
-   time_t now = time(&now);
-   localtime_r(&now, &initial);
+   if (sntp_getreachability(0) != 0){                            // if sntp_getreachability(0) == 0 -> ntp server call failed
+    time_t now = time(&now);
+    localtime_r(&now, &initial);
+   }
   #ifdef DEBUG
    Serial.print("Time Server connection attempt: ");
    Serial.println(time_retry + 1);
@@ -1654,7 +1666,7 @@ void parseSpotify(){                                  // calls Spotify api with 
           Serial.println("deserializeJson() failed: ");
           Serial.println(error.c_str());
         #endif
-		return;
+        return;
       }
       JsonObject item = doc["item"];
       JsonObject item_album = item["album"];
@@ -1672,7 +1684,7 @@ void parseSpotify(){                                  // calls Spotify api with 
         Serial.println(item_name);
       #endif 
   
-      snprintf(spotify, sizeof(spotify), "%s<br><span class=\\\"von\\\">%s</span><br>%s", item_name, msgBy, artist);             // information shown on spotify.html
+      snprintf(spotify, sizeof(spotify), "%s<br><span class=\"von\">%s</span><br>%s", item_name, msgBy, artist);             // information shown on spotify.html
       snprintf(showspotify, sizeof(showspotify), "%s: \"%s\" %s %s", msgSpotifyOK, item_name, msgBy, artist);                        // information shown on display
       utf8AsciiConvert(showspotify, showspotify);
       strcpy(spotifycover,coverurl);
@@ -2538,6 +2550,7 @@ void clearCredentials() {         // erases WiFi credentials persistently saved 
 
 void showCover() {                                 // sends Spotify information and cover url to requesting html page
  String music = spotify;
+ music.replace("\"","'");                          // replace " by ' to prevent Json error in html
  String pic = spotifycover;
  String temp = "{\"Info\":\""+ music + "\", \"Url\":\""+ pic + "\" }";
  server.send(200, "application/json", temp);
@@ -2698,7 +2711,7 @@ void listener() {                                                  // handles al
 
  
 
-void setup(void){      
+void setup(void){       
   P.begin();                                 // Parola begin
   #ifdef DEBUG
     Serial.begin(57600);
