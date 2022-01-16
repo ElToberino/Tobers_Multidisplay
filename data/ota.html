@@ -49,34 +49,29 @@ for further information see: https://github.com/ElToberino/Tobers_Multidisplay
 				})
 		 }, 250);
 		}
-                
-		
 		
 		function typecheck() {
-        var path = document.getElementById("chosenfile").value;
-		var file = path.substr(path.lastIndexOf('\\') + 1);//.split('.')[0];
-		var extension = path.substring(path.lastIndexOf('.')+1, path.length) || file;
-		var size = Math.round((document.getElementById("chosenfile").files[0].size)/1024);  //rounded size in KB
-		if (extension == "bin") {
-			document.getElementById("infobanner").style.display = "none";
-			document.getElementById("engage").removeAttribute('disabled');
-			document.getElementById("infobanner").innerHTML = "<div class=\"proform\" style=\"line-height:1.5;\">File:  <span style=\"font-weight:normal;\">" + file + "</span><br>File Size:  <span style=\"font-weight:normal;\">" +size + " KB</span></div>";
-				}
-		else {
-			document.getElementById("infobanner").className = "red";
-			document.getElementById("infobanner").style.display = "";
-			document.getElementById("engage").setAttribute('disabled', true);
-			document.getElementById("infobanner").innerHTML = ("Only files of type .bin allowed");
+			var path = document.getElementById("chosenfile").value;
+			var file = path.substr(path.lastIndexOf('\\') + 1);//.split('.')[0];
+			var extension = path.substring(path.lastIndexOf('.')+1, path.length) || file;
+			var size = Math.round((document.getElementById("chosenfile").files[0].size)/1024);  //rounded size in KB
+			if (extension == "bin") {
+				document.getElementById("infobanner").className = "free";
+				document.getElementById("engage").removeAttribute('disabled');
+				document.getElementById("infobanner").innerHTML = "<div class=\"proform\" style=\"line-height:1.5;\">Datei:  <span style=\"font-weight:normal;\">" + file + "</span><br>File Size:  <span style=\"font-weight:normal;\">" +size + " KB</span></div>";
+			} else {
+				document.getElementById("infobanner").className = "red";
+				document.getElementById("engage").setAttribute('disabled', true);
+				document.getElementById("infobanner").innerHTML = ("Only files of type .bin allowed");
+			}
 		}
-		}
-		
+				
 		function confirmOTA() {
-		var confirmOTA = confirm('Do you really want to overwrite the current program?');
+			var confirmOTA = confirm('Do you really want to overwrite the current program?');
 			if (confirmOTA == true) {
-			document.getElementById("OTAFile").submit();
-			document.getElementById("infobanner").className = "free";
-			document.getElementById("infobanner").style.display = "";
-			document.getElementById("infobanner").innerHTML = ("<div class=\"proform\" style=\"padding:0.5em;\">...updating...</div>");		
+				document.getElementById("OTAFile").submit();
+				document.getElementById("infobanner").className = "free";
+				document.getElementById("infobanner").innerHTML = ("<div class=\"proform\" style=\"padding:0.5em;\">...updating...</div>");	
 			}
 		}
   
