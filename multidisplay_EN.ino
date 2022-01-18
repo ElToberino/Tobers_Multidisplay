@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.3 - 18.01.2022
+//    V 1.3.2 - 16.01.2022
 //
 //    *********************************************
 //
@@ -69,8 +69,13 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.2 -> V 1.3.3:  - fix in "handleList()" for ESP32 core version >=2.0.0
-//                                    
+//    CHANGELOG V 1.3.1 -> V 1.3.2:  - bugfix to prevent JSON error in html in case of song info contains quotation marks
+//                                    --> change of escaping double quotation marks for msg spotify in parseSpotify()
+//                                    --> added String.replace double quotation mark by single quotation mark in showCover();
+//                                   - change in wificonnect() to re-enable WiFi connection on start up (disabled by default since ESP8266 core V 3.0)
+//                                   - fix in ota.html
+//                                   - fix in "getTimeFromServer()", new variable "ntp_getreachability"
+//
 //                                                               
 //    ***************************************************************
 
@@ -1840,11 +1845,7 @@ void handleList() {                                                             
   File file = root.openNextFile();
   while (file) {
     if (temp != "[") temp += ",";
-    #ifdef ESP_ARDUINO_VERSION                                                                                          // for ESP32 core Version >=2.0.0
-      temp += R"({"name":")" + String(file.name()) + R"(","size":")" + formatBytes(file.size()) + R"("})";
-    #else
-      temp += R"({"name":")" + String(file.name()).substring(1) + R"(","size":")" + formatBytes(file.size()) + R"("})";
-    #endif
+    temp += R"({"name":")" + String(file.name() + 1) + R"(","size":")" + formatBytes(file.size()) + R"("})";
     file = root.openNextFile();
   }
   temp += R"(,{"usedBytes":")" + formatBytes(SPIFFS.usedBytes() * 1.05) + R"(",)" +              // calculates used memory + additional 5% for safety reasons
@@ -2710,7 +2711,7 @@ void listener() {                                                  // handles al
 
  
 
-void setup(void){
+void setup(void){       
   P.begin();                                 // Parola begin
   #ifdef DEBUG
     Serial.begin(57600);
