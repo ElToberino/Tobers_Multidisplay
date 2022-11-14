@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.3 - 18.01.2022
+//    V 1.3.4 - 14.11.2022
 //
 //    *********************************************
 //
@@ -37,12 +37,12 @@
 //    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4, 3.0.2
 //      ------->      V 2.7.4 strongly recommended - serving of files is much faster than in later versions!
 //
-//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5, V 1.0.6, V 2.0.2
+//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5, V 1.0.6, V 2.0.2, V 2.0.5
 //
 //    required libraries:
-//    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.3.0
-//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.5.6
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.19.1
+//    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.3.1
+//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.6.1
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.19.4
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -69,7 +69,8 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.2 -> V 1.3.3:  - fix in "handleList()" for ESP32 core version >=2.0.0
+//    CHANGELOG V 1.3.3 -> V 1.3.4:  - tested with current library versions
+//                                   - change of a news source in german version (newsapi not working properly with "derstandard.at")
 //                                    
 //                                                               
 //    ***************************************************************
