@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.4 - 14.11.2022
+//    V 1.3.5 - 12.01.2023
 //
 //    *********************************************
 //
@@ -14,7 +14,7 @@
 //    Configuration and settings are made via web interface.
 //    For instructions and further information see: https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9
 //
-//    Copyright (c) 2020-2022 Tobias Schulz
+//    Copyright (c) 2020-2023 Tobias Schulz
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -34,15 +34,15 @@
 //    successfully compiled with ARDUINO IDE 1.8.12 - 1.8.19
 //
 //    required board installation:
-//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4, 3.0.2
+//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4, 3.0.2, 3.1.0
 //      ------->      V 2.7.4 strongly recommended - serving of files is much faster than in later versions!
 //
-//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5, V 1.0.6, V 2.0.2, V 2.0.5
+//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, V 1.0.5, V 1.0.6, V 2.0.2, V 2.0.5, V 2.0.6
 //
 //    required libraries:
 //    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.3.1
-//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.6.1
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.19.4
+//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.6.2
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 6.20.0
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -67,10 +67,10 @@
 //
 //    PLEASE NOTICE THE COMMENTS and set the #defines and hardware configuration parameters according to your needs.
 //
-//    ***************************************************************
+//    ***************************************************************g
 //
-//    CHANGELOG V 1.3.3 -> V 1.3.4:  - tested with current library versions
-//                                   - change of a news source in german version (newsapi not working properly with "derstandard.at")
+//    CHANGELOG V 1.3.4 -> V 1.3.5:  - changes in getNewsData(): check of Json object to prevent crashes if newsapi call delivers incorrect results 
+//                                   - change of news sources in german version (newsapi currently not working properly with "spiegel.de" and "handelsblatt.com")
 //                                    
 //                                                               
 //    ***************************************************************
@@ -1397,42 +1397,69 @@ void getNewsData() {
         
         JsonArray articles = doc["articles"];
 
-        JsonObject articles_0 = articles[0];                    // EXAMPLE:
-        const char* name0 = articles_0["source"]["name"];       // "Spiegel Online"
-        const char* title0 = articles_0["title"];               // "Wahlkampf in Großbritannien: Der Brexit-Vagabund"
+        JsonObject articles_0 = articles[0];                                                        // EXAMPLE:
+        bool news0_ok = false;
+        const char* name0;
+        const char* title0;
         const char* description0;
-        if (articles_0["description"] != nullptr) {description0 = articles_0["description"];}     //const char* description0 = articles_0["description"] -> "Der Londoner Tory-Abgeordnete Greg Hands war 2016 gegen den Brexit, mittlerweile wirbt er dafür.... 
-        else {description0 = " - keine Detailinfo verfügbar - ";}
-        const char* url0 = articles_0["url"];                   // "http://www.spiegel.de/politik/ausland/brexit-im-wahlkampf-mit-tory-politiker-greg-hands-a-1300489.html"
-
+        const char* url0;
+        if (articles_0) {                                                                           //see: https://arduinojson.org/v6/api/jsonobject/containskey/                      
+          news0_ok = true;
+          name0 = articles_0["source"]["name"];                                                     // "Spiegel Online"
+          title0 = articles_0["title"];                                                             // "Wahlkampf in Großbritannien: Der Brexit-Vagabund"
+          if (articles_0["description"] != nullptr) {description0 = articles_0["description"];}     //const char* description0 = articles_0["description"] -> "Der Londoner Tory-Abgeordnete Greg Hands war 2016 gegen den Brexit, mittlerweile wirbt er dafür.... 
+            else {description0 = " - keine Detailinfo verfügbar - ";}
+          url0 = articles_0["url"];                                                                 // "http://www.spiegel.de/politik/ausland/brexit-im-wahlkampf-mit-tory-politiker-greg-hands-a-1300489.html"
+        }
+        
         JsonObject articles_1 = articles[1];
-        const char* name1 = articles_1["source"]["name"];
-        const char* title1 = articles_1["title"];
+        bool news1_ok = false;
+        const char* name1;
+        const char* title1;
         const char* description1;
-        if (articles_1["description"] != nullptr) {description1 = articles_1["description"];} 
-        else {description1 = " - keine Detailinfo verfügbar - ";}
-        const char* url1 = articles_1["url"];
+        const char* url1;
+        if (articles_1) {
+          news1_ok = true;
+          name1 = articles_1["source"]["name"];
+          title1 = articles_1["title"];
+          if (articles_1["description"] != nullptr) {description1 = articles_1["description"];} 
+            else {description1 = " - keine Detailinfo verfügbar - ";}
+          url1 = articles_1["url"];
+        }
 
         JsonObject articles_2 = articles[2];
-        const char* name2 = articles_2["source"]["name"];
-        const char* title2 = articles_2["title"];
+        bool news2_ok = false;
+        const char* name2;
+        const char* title2;
         const char* description2;
-        if (articles_2["description"] != nullptr) {description2 = articles_2["description"];} 
-        else {description2 = " - keine Detailinfo verfügbar - ";}
-        const char* url2 = articles_2["url"];
+        const char* url2;
+        if (articles_2) {
+          news2_ok = true;
+          name2 = articles_2["source"]["name"];
+          title2 = articles_2["title"];
+          if (articles_2["description"] != nullptr) {description2 = articles_2["description"];} 
+            else {description2 = " - keine Detailinfo verfügbar - ";}
+          url2 = articles_2["url"];
+        }
 
         if (enableNewsXL==1){
-          snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "%s %s: %s: %s", msgNews, name0, title0, description0);
-          snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "%s %s: %s: %s", msgNews, name1, title1, description1);
-          snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "%s %s: %s: %s", msgNews, name2, title2, description2);
+          if (news0_ok) snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "%s %s: %s: %s", msgNews, name0, title0, description0);
+            else snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "check news source: %s: no info", ownNewsSources[w].c_str());
+          if (news1_ok) snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "%s %s: %s: %s", msgNews, name1, title1, description1);
+            else snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "check news source: %s: no info", ownNewsSources[w].c_str());
+          if (news2_ok)snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "%s %s: %s: %s", msgNews, name2, title2, description2);
+            else snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "check news source: %s: no info", ownNewsSources[w].c_str());
         } else {
-          snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "%s %s: %s", msgNews, name0, title0);
-          snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "%s %s: %s", msgNews, name1, title1);
-          snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "%s %s: %s", msgNews, name2, title2);
+          if (news0_ok) snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "%s %s: %s", msgNews, name0, title0);
+            else snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "check news source: %s", ownNewsSources[w].c_str());
+          if (news1_ok) snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "%s %s: %s", msgNews, name1, title1);
+            else snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "check news source: %s", ownNewsSources[w].c_str());
+          if (news2_ok) snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "%s %s: %s", msgNews, name2, title2);
+            else snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "check news source: %s", ownNewsSources[w].c_str());
         }
-        snprintf(table[newsmultiplier].newslink, sizeof(table[newsmultiplier].newslink), "%s", url0);
-        snprintf(table[newsmultiplier+1].newslink, sizeof(table[newsmultiplier+1].newslink), "%s", url1);
-        snprintf(table[newsmultiplier+2].newslink, sizeof(table[newsmultiplier+2].newslink), "%s", url2);
+        if (news0_ok) snprintf(table[newsmultiplier].newslink, sizeof(table[newsmultiplier].newslink), "%s", url0);
+        if (news1_ok)snprintf(table[newsmultiplier+1].newslink, sizeof(table[newsmultiplier+1].newslink), "%s", url1);
+        if (news2_ok)snprintf(table[newsmultiplier+2].newslink, sizeof(table[newsmultiplier+2].newslink), "%s", url2);
         
         newsEverLoaded = true;
       } else {
