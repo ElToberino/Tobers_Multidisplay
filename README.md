@@ -53,8 +53,6 @@ Thanks to the many, many other programmers and enthusiasts in the web whose work
 Sometimes after skipping the config portal ( - regular setup with Wifi credentials works fine - ) the webserver can't be reached, though the AP has been established. Power cycling the ESP32 can help. <br>
 *I guess this could be related to another known issue [connection only every second time](https://github.com/espressif/arduino-esp32/issues/2501#). You won't notice that issue, because I made a workaround for this in the code.*<br>
 <br>
-The following issue is gone with V 1.0.5 of ESP32 core:<br>
-*The most annoying issue is [related to the webserver](https://github.com/espressif/arduino-esp32/issues/1921): sending the guest message via index.html or updating the messages via admin.html can result in a failure indication on the website, though the messages have been sent successfully - a page reload shows that. Beside that, the call of the html sites "news.html" and "spiffs.html" can partially fail - but only with Chromium based browsers. With Firefox everything works fine - I can confirm this for Windows and Android. Note: This doesn't affect the messages shown on display - they are running without any problems!*<br>
-<br>
+
 ***ESP8266***<br>
 In some rare cases, there can occur some heap problems calling weather Data - but only if debug mode is active. So if you don't need it, disable debugging and everything works fine. (I was able to confirm this, writing the successful calls of weather data into a log file for several days.)
