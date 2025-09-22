@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.6 - 19.02.2024
+//    V 1.3.7 - 21.09.2025
 //
 //    *********************************************
 //
@@ -14,7 +14,7 @@
 //    Configuration and settings are made via web interface.
 //    For instructions and further information see: https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9
 //
-//    Copyright (c) 2020-2024 Tobias Schulz
+//    Copyright (c) 2020-2025 Tobias Schulz
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -35,14 +35,14 @@
 //
 //    required board installation:
 //    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4, 3.0.2, 3.1.0, 3.1.2
-//      ------->      V 2.7.4 strongly recommended - serving of files is much faster than in later versions!
 //
-//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, 1.0.5, 1.0.6, 2.0.2, 2.0.5, 2.0.6, 2.0.14 
+//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, 1.0.5, 1.0.6, 2.0.2, 2.0.5, 2.0.6, 2.0.14, 2.0.17
+//      ------->  V 2.0.17 recommended due to some possibly occuring issues with httpclient in Versions >= V.3.0
 //
 //    required libraries:
 //    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.5.1
-//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.7.2
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 7.0.3
+//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.7.3
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 7.4.2
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
@@ -69,7 +69,9 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.5 -> V 1.3.6:  - updated certificate for spotify https connection (change to "DigiCert Global Root G2")
+//    CHANGELOG V 1.3.6 -> V 1.3.7:  - changes in Spotify authentication process due to Spotify's currently changed policy for redirect URIs
+//                                   - minor fixes in getNewsData() & showAdvanced()
+//                                   - new variable "previoustimecall" for timeOnly mode used in displayOnlyTime()
 //                                    
 //                                                               
 //    ***************************************************************
@@ -110,7 +112,6 @@
   #include <SPIFFS.h>
   #include <Update.h>
  #ifdef SPOTIFY
-  #include <ESPmDNS.h>
   #include <base64.h>
  #endif
 
@@ -189,6 +190,8 @@ extern "C" uint8_t sntp_getreachability(uint8_t);               // shows reachab
 uint8_t enableTime = 1;                    // internal variable set via webinterface
 uint8_t enableDate = 1;                    // internal variable set via webinterface
 
+unsigned long previoustimecall = 0;        // internal variable needed for refresh timer in timeOnly mode
+
 //#define SHORTDATE                        // comment this out if you prefer a shorter date display: "1 Mar 2020" instead of "Sunday 1 March 2020" 
 
 
@@ -264,7 +267,7 @@ uint8_t enableSpotify = 1;                                           // internal
 const char* clientID = "XXXXXXXXXX";                                      // register your device on https://developer.spotify.com/dashboard/
 const char* clientSecret = "XXXXXXXXXX";
 
-const char* redirectUri = "http://esp.local/callback/";
+const char* redirectUri = "http://127.0.0.1:80/callback";
                                                                                                 // certificate necessary for https connection, must be updated if expired. 
                                                                                                 // certificate can be found by clicking the lock symbol in address field of your browser calling "spotify.com"
                                                                                                 //  --> used certificate "DigiCert Global Root G2" see: https://www.digicert.com/kb/digicert-root-certificates.htm
@@ -1157,7 +1160,10 @@ void displayOnlyTime() {                                                        
       P.displayClear();                                                             // display shows nothing
     }
    }
-    
+  if (millis() - previoustimecall > (60* 10000)){                                   // gets time from server every 60 minutes
+    getTimeFromServer();                                         
+    previoustimecall=millis();
+  }    
   if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();
 }
 
@@ -1406,7 +1412,7 @@ void getNewsData() {
           news0_ok = true;
           name0 = articles_0["source"]["name"];                                                     // "Spiegel Online"
           title0 = articles_0["title"];                                                             // "Wahlkampf in Großbritannien: Der Brexit-Vagabund"
-          if (articles_0["description"] != nullptr) {description0 = articles_0["description"];}     //const char* description0 = articles_0["description"] -> "Der Londoner Tory-Abgeordnete Greg Hands war 2016 gegen den Brexit, mittlerweile wirbt er dafür.... 
+          if (articles_0["description"]) {description0 = articles_0["description"];}     //const char* description0 = articles_0["description"] -> "Der Londoner Tory-Abgeordnete Greg Hands war 2016 gegen den Brexit, mittlerweile wirbt er dafür.... 
             else {description0 = " - keine Detailinfo verfügbar - ";}
           url0 = articles_0["url"];                                                                 // "http://www.spiegel.de/politik/ausland/brexit-im-wahlkampf-mit-tory-politiker-greg-hands-a-1300489.html"
         }
@@ -1421,7 +1427,7 @@ void getNewsData() {
           news1_ok = true;
           name1 = articles_1["source"]["name"];
           title1 = articles_1["title"];
-          if (articles_1["description"] != nullptr) {description1 = articles_1["description"];} 
+          if (articles_1["description"]) {description1 = articles_1["description"];} 
             else {description1 = " - keine Detailinfo verfügbar - ";}
           url1 = articles_1["url"];
         }
@@ -1436,7 +1442,7 @@ void getNewsData() {
           news2_ok = true;
           name2 = articles_2["source"]["name"];
           title2 = articles_2["title"];
-          if (articles_2["description"] != nullptr) {description2 = articles_2["description"];} 
+          if (articles_2["description"]) {description2 = articles_2["description"];} 
             else {description2 = " - keine Detailinfo verfügbar - ";}
           url2 = articles_2["url"];
         }
@@ -1491,14 +1497,8 @@ void getNewsData() {
 #ifdef SPOTIFY
 /// SPOTIFY FUNCTIONS ///
 
-void spotiauth() {                        // initiates Spotify authentication process -> for further information see: https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
-  if (!MDNS.begin("esp")) {               // Start the mDNS responder for esp.local (required for Spotify answer)
-   #ifdef DEBUG 
-    Serial.println("Error setting up MDNS responder!");
-   #endif
-  }
+void spotiauth() {                        // initiates Spotify authentication process -> for further information see: https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow 
   #ifdef DEBUG
-    Serial.println("mDNS responder started");
     Serial.println("First Step: Calling Spotify for one time authentication token...");
   #endif 
   String firstContact = "https://accounts.spotify.com/de/authorize/?client_id=" + String(clientID) + "&response_type=code&redirect_uri=" + String(redirectUri) + "&scope=user-read-currently-playing";
@@ -2025,7 +2025,7 @@ void showAdvanced (){                                                           
     #endif
   }
  String temp = "{" + dlf[0] + "," + dlf[1] + "," + dlf[2] + "," + dlf[3] + ",\"EnableTime\":\"" + enableTime + "\" ,\"EnableDate\":\"" + enableDate + "\", \"EnableWeath\":\"" + enableWeath + "\", \"EnableNews1\":\"" + enableNews1 + "\", \"EnableSpot\":\"" + enableSpotify + "\", \"EnableNews2\":\"" + enableNews2 + "\" ,\"EnableOwn\":\"" + enableOwn + "\" ,\"EnableOwn\":\"" + enableOwn + "\"}";
- delay(1000);       // necessary time to enable composing large string "temp" if total number of news > 9
+ 
  server.send(200, "application/json", temp);
  #ifdef DEBUG
   Serial.print("String: ");
