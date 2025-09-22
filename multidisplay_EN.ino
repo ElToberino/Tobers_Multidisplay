@@ -2730,7 +2730,7 @@ void listener() {                                                  // handles al
 
  #ifdef SPOTIFY
   server.on("/spotiauth", spotiauth);                               // starts Spotify authentication process
-  server.on("/callback/", spoticallback);
+  server.on("/callback", spoticallback);
  #endif
  
 }                      // end of function listener()
