@@ -28,7 +28,12 @@ Max7219 8x8 LED matrix modules (My display is made of eight modules)<br>
 * *Required accounts:*<br>
 WEATHER: personal api key from [openweathermap.org](https://openweathermap.org/)<br>
 NEWS: personal api key from [newsapi.org/](https://newsapi.org/)<br>
-SPOTIFY: (free or premium) account AND [developer registration of your device](https://developer.spotify.com/dashboard/)<br>
+SPOTIFY: premium account AND [developer registration of your device](https://developer.spotify.com/dashboard/)
+<br>
+
+**Spotify**<br>
+Please note that Spotify has recently limited the lifetime of the refreshtoken; it expires after 180 days. That means you have to do the authentication process again after this time.<br>
+If you have problems connecting to Spotify, please check if the TLS certificates (saved in *cert_spot.txt* and *cert_spot_api.txt*) have changed. You can find this out with your browser: Go to *accounts.spotify.com* and *api.spotify.com*, click the key symbol in the address bar and compare the certificates. If they are different, change the files and upload them (a restart is required after that).
 <br>
 
 **For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hackster.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and a video there.**<br><br>
