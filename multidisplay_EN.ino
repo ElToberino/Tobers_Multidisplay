@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.7 - 21.09.2025
+//    V 1.3.8 - 04.09.2026
 //
 //    *********************************************
 //
@@ -14,7 +14,7 @@
 //    Configuration and settings are made via web interface.
 //    For instructions and further information see: https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9
 //
-//    Copyright (c) 2020-2025 Tobias Schulz
+//    Copyright (c) 2020-2026 Tobias Schulz
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -31,27 +31,32 @@
 //
 //    ***************************************************************
 //
-//    successfully compiled with ARDUINO IDE 1.8.12 - 1.8.19
+//    successfully compiled with ARDUINO IDE 1.8.19
 //
 //    required board installation:
-//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 2.6.3, 2.7.1, 2.7.4, 3.0.2, 3.1.0, 3.1.2
+//    - ESP8266 core for Arduino -> https://github.com/esp8266/Arduino                 successfully compiled with V 3.1.2
 //
-//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 1.0.4, 1.0.5, 1.0.6, 2.0.2, 2.0.5, 2.0.6, 2.0.14, 2.0.17
+//    - ESP32 core for Arduino -> https://github.com/espressif/arduino-esp32           successfully compiled with V 2.0.17 (V 3++ also working)
 //      ------->  V 2.0.17 recommended due to some possibly occuring issues with httpclient in Versions >= V.3.0
 //
 //    required libraries:
 //    - MAX72xx Library by majicDesigns -> https://github.com/MajicDesigns/MD_MAX72XX             successfully compiled with V 3.5.1
-//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.7.3
-//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 7.4.2
+//    - Parola Library by majicDesigns -> https://github.com/MajicDesigns/MD_Parola               successfully compiled with V 3.7.5
+//    - Arduino Json library by Benoit Blanchon -> https://github.com/bblanchon/ArduinoJson       successfully compiled with V 7.4.3
 //    - my fork of WifiManager library (development branch) by tzapu/tablatronix -> https://github.com/ElToberino/WiFiManager_for_Multidisplay
 //
 //    reqired accounts/api keys:
 //    - WEATHER: personal api key from https://openweathermap.org/
 //    - NEWS: personal api key from https://newsapi.org/
-//    - SPOTIFY: (free or premium) account AND developer registration of your device -> https://developer.spotify.com/dashboard/
+//    - SPOTIFY: premium account AND developer registration of your device -> https://developer.spotify.com/dashboard/
 //
 //    required files:
 //    - all files delivered with this ino.file are required! -> the files in folder data must be uploaded on SPIFFS
+//
+//    The included certificate file (cert_spot.txt) is a G2 root certificate from Starfield Technologies, Inc.
+//    The included certificate file (cert_spot_api.txt) is a G2 global root certificate from DigiCert Inc.
+//    They may expire and need to be updated.
+//    They can be found by clicking the lock symbol in address field of your browser calling "accounts.spotify.com" and "api.spotify.com".
 //
 //    ****************************************************************
 //
@@ -69,9 +74,12 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.6 -> V 1.3.7:  - changes in Spotify authentication process due to Spotify's currently changed policy for redirect URIs
-//                                   - minor fixes in getNewsData() & showAdvanced()
-//                                   - new variable "previoustimecall" for timeOnly mode used in displayOnlyTime()
+//    CHANGELOG V 1.3.7 -> V 1.3.8:  - changes in Wifi functions
+//                                   - changes in time an date functions
+//                                   - spotify certificate loaded from file
+//                                     --> new files cert_spot.txt, cert_spot_api.txt
+//                                         change in loadSpotifyAuth()
+//                                         new bool loadCertificate() 
 //                                    
 //                                                               
 //    ***************************************************************
@@ -175,7 +183,16 @@ const char* timezone =  "CET-1CEST,M3.5.0/02,M10.5.0/03";       // = CET/CEST  -
 const char* ntpServer = "europe.pool.ntp.org";                         //pool.ntp.org       // server pool prefix "2." could be necessary with IPv6
 
 struct tm tm;
-extern "C" uint8_t sntp_getreachability(uint8_t);               // shows reachability of NTP Server (value != 0 means server could be reached) see explanation in http://savannah.nongnu.org/patch/?9581#comment0:
+
+#ifdef ESP32
+ #if ESP_ARDUINO_VERSION_MAJOR < 3
+  extern "C" uint8_t sntp_getreachability(uint8_t);              // shows reachability of NTP Server (value != 0 means server could be reached) see explanation in http://savannah.nongnu.org/patch/?9581#comment0:
+ #else
+  #include <esp_sntp.h>
+ #endif
+#else                                                            // ESP8266
+  extern "C" uint8_t sntp_getreachability(uint8_t);              // shows reachability of NTP Server (value != 0 means server could be reached) see explanation in http://savannah.nongnu.org/patch/?9581#comment0:
+#endif
 
 #ifdef LOCAL_LANG
   const char* const PROGMEM days[] { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag" } ;
@@ -191,6 +208,8 @@ uint8_t enableTime = 1;                    // internal variable set via webinter
 uint8_t enableDate = 1;                    // internal variable set via webinterface
 
 unsigned long previoustimecall = 0;        // internal variable needed for refresh timer in timeOnly mode
+
+uint8_t lastDayRun = 0;                    // day of last makeDate() run
 
 //#define SHORTDATE                        // comment this out if you prefer a shorter date display: "1 Mar 2020" instead of "Sunday 1 March 2020" 
 
@@ -268,35 +287,12 @@ const char* clientID = "XXXXXXXXXX";                                      // reg
 const char* clientSecret = "XXXXXXXXXX";
 
 const char* redirectUri = "http://127.0.0.1:80/callback";
-                                                                                                // certificate necessary for https connection, must be updated if expired. 
-                                                                                                // certificate can be found by clicking the lock symbol in address field of your browser calling "spotify.com"
-                                                                                                //  --> used certificate "DigiCert Global Root G2" see: https://www.digicert.com/kb/digicert-root-certificates.htm
-const char PROGMEM digicert_CA_pem[] = R"%%%(
------BEGIN CERTIFICATE-----
-MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh
-MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
-d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH
-MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT
-MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
-b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG
-9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI
-2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx
-1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ
-q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz
-tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ
-vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP
-BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV
-5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY
-1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4
-NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG
-Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91
-8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe
-pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl
-MrY=
------END CERTIFICATE-----
-)%%%";
-
-
+                                                                                                
+char cert_spotify_account[1800];                                                                // certificate necessary for https connection, loaded from file on starttup. Must be updated if expired. 
+                                                                                                // --> can be found by clicking the lock symbol in address field of your browser calling "accounts.spotify.com"
+char cert_spotify_api[1800];                                                                    // certificate necessary for https connection, loaded from file on starttup. Must be updated if expired. 
+                                                                                                // --> can be found by clicking the lock symbol in address field of your browser calling "api.spotify.com"
+                                                                                    
 String refreshtoken;                                                                            // necessary for getting access token
 String auth;                                                                                    // base64 encoded "client_id:client_secret"
 String accesstoken;                                                                             // necessary for calling information about currently playing song, valid until expire time has runs out
@@ -787,6 +783,147 @@ void wificonnect(){                                                   // read ht
   uint8_t  wifi_retry=0;                                              // Counter solves ESP32-Bug with certain routers where connection can only be established every second time
   uint8_t  staticIP = 0;
 
+  IPAddress ip, gateway, subnet, dns;
+  #ifdef ESP32
+   WiFi.mode(WIFI_STA);                                                // required for core >= 3.3 : requires setting mode and disconnecting BEFORE config
+   WiFi.disconnect();                                                 //   --> alos safe for core v2
+  #endif                                                       
+  
+File f = SPIFFS.open("/IP_mode.txt", "r");
+  
+  if (f) {                                                                  // if !f reading skipped. staticIP stays 0
+    String line;
+    line.reserve(16);
+
+    line = f.readStringUntil('\n');
+    line.trim();
+    staticIP = line.toInt();
+    
+    line = f.readStringUntil('\n'); line.trim();                                 // uses fromString() method now for robustness 
+    if (!ip.fromString(line)) { ip = IPAddress((uint32_t)line.toInt()); }         // --> explicit cast for ESP8266 compatibility
+    
+    line = f.readStringUntil('\n'); line.trim();
+    if (!gateway.fromString(line)) { gateway = IPAddress((uint32_t)line.toInt()); }
+    
+    line = f.readStringUntil('\n'); line.trim();
+    if (!subnet.fromString(line)) { subnet = IPAddress((uint32_t)line.toInt()); }
+    
+    line = f.readStringUntil('\n'); line.trim();
+    if (!dns.fromString(line)) { dns = IPAddress((uint32_t)line.toInt()); }
+    
+    f.close();
+  }
+
+ #ifdef DEBUG
+  Serial.println("IP Configuration loaded from SPIFFS:");
+  Serial.print("Static IP enabled: ");
+  Serial.println(staticIP);
+  if (staticIP == 1) {
+    Serial.printf("IP: %s, Gateway: %s, Subnet: %s, DNS: %s\n", 
+                  ip.toString().c_str(), gateway.toString().c_str(), 
+                  subnet.toString().c_str(), dns.toString().c_str());
+  }
+ #endif
+  
+  if (staticIP == 1) WiFi.config(ip, gateway, subnet, dns);             // sets static IP parameters
+  WiFi.softAPdisconnect(true);                                          // closes AP mode on startup to avoid ESP working as AP during normal operation
+  
+#ifdef ESP32
+  while (WiFi.status() != WL_CONNECTED && wifi_retry < 3) {
+#else
+  while (WiFi.waitForConnectResult() != WL_CONNECTED && wifi_retry < 3) {
+#endif
+  #ifdef DEBUG
+    Serial.print("Attempt via WiFi.begin() -> Nr: ");
+    Serial.println(wifi_retry + 1);
+  #endif
+
+    WiFi.begin();
+                                                                  // INNER WAIT LOOP: Wait up to 6 seconds for this attempt to work
+    for (int wait = 0; wait < 12; wait++) {                       // 12 * 500ms = 6 Seconds
+      if (WiFi.status() == WL_CONNECTED) break;                   // Exit wait early if connected!
+      delay(500);
+     #ifdef DEBUG
+      Serial.print(".");
+     #endif
+    }
+  #ifdef DEBUG
+   Serial.println(""); 
+  #endif
+   wifi_retry++;
+  }
+  
+  if(wifi_retry >= 3) {
+        #ifdef DEBUG
+          Serial.println("no connection, starting AP");
+          Serial.println("Notice on Display: Portal");
+          Serial.println("... starting AP");
+        #endif
+        P.print("no Wifi --> AP");
+        WiFiManager wifiManager;
+      #ifndef SPOTIFY                                                         // this doesn't work with SPOTIFY defined on ESP32 !
+        wifiManager.setAPStaticIPConfig(AP_IP, AP_IP, AP_Netmask);            // if #define SPOTIFY default ESP IP 192.168.4.1 is set
+      #endif
+        wifiManager.setConfigPortalTimeout(300);                              // timeout for configportal in seconds
+        wifiManager.startConfigPortal(AP_NAME, AP_PW);
+
+         if (wifiManager.getTimeoutState() == true) {                         // if config portal has timed out, ESP restarts(necessary after power blackout, when WiFi network needs some time to start up again)
+          #ifdef DEBUG                                                        // (necessary after power blackout, when Home WiFi network needs some time to start up)
+            Serial.println("Config Portal has timed out. Restarting...");
+          #endif
+          delay(500);
+          ESP.restart();  
+        }
+        
+        wifiManagerWasCalled = true;
+             
+        if (wifiManager.getStaticMode() == true) {                            // gets information from WiFiManager if connection has been made with static IP
+            static_Mode_enabled = 1;                                          // and writes it to file on SPIFFS for future start ups. 
+          }
+        File fs = SPIFFS.open("/IP_mode.txt", "w");                           // SAVING: uses println and toString() to avoid integer overflow bugs analog to reading
+        fs.println(static_Mode_enabled);
+        fs.println(WiFi.localIP().toString());
+        fs.println(WiFi.gatewayIP().toString());
+        fs.println(WiFi.subnetMask().toString());
+        fs.println(WiFi.dnsIP().toString());
+        fs.close();
+    
+      #ifdef DEBUG
+        Serial.println("IP Configuration saved on SPIFFS:");
+        Serial.print("Static IP enabled: ");
+        Serial.println(static_Mode_enabled);
+        Serial.print("IP: ");
+        Serial.println(WiFi.localIP());
+        Serial.print("Gateway: ");
+        Serial.println(WiFi.gatewayIP());
+        Serial.print("Subnet: ");
+        Serial.println(WiFi.subnetMask());
+        Serial.print("DNS: ");
+        Serial.println(WiFi.dnsIP());
+      #endif
+  }
+ 
+  if (WiFi.waitForConnectResult() == WL_CONNECTED){
+        #ifdef DEBUG
+          Serial.print("Connected to network \"");
+          Serial.print(WiFi.SSID());
+          Serial.print("\" with IP ");
+          Serial.println(WiFi.localIP());
+        #endif
+        P.displayReset();
+  }
+}
+
+/*
+void wificonnect(){                                                   // read https://forum.arduino.cc/index.php?topic=652513 to understand how WiFi setup works on ESP
+
+  #ifdef WIFI_IS_OFF_AT_BOOT                                          // enables WiFi connection on start up (restores original ESP8266 behaviour, which is disabled by default since ESP8266 core V 3.0)
+    enableWiFiAtBootTime();                                           // see: https://github.com/esp8266/Arduino/blob/master/doc/esp8266wifi/generic-class.rst#persistent
+  #endif
+  
+  uint8_t  wifi_retry=0;                                              // Counter solves ESP32-Bug with certain routers where connection can only be established every second time
+  uint8_t  staticIP = 0;
+
   File f = SPIFFS.open("/IP_mode.txt", "r");                          // reads information saved on SPIFFS file if device shall connect with static IP
   String temp0 = f.readStringUntil('\n');
   temp0.trim();
@@ -897,8 +1034,68 @@ void wificonnect(){                                                   // read ht
         P.displayReset();
   }
 }                                                                 // end of wificonnect()
-
+*/
 #ifdef ESP32                                                           
+ void wifiReconnect() {
+  static unsigned long lastWifiRetry = 0;
+  static uint8_t wifi_retry_count = 0;
+  static bool reconnecting = false;
+                                                                   
+  if (WiFi.status() == WL_CONNECTED) {                       // if connected, check if came back from a disconnect
+    if (reconnecting) {
+      reconnecting = false;
+      wifi_retry_count = 0;
+      #ifdef DEBUG
+        Serial.println("WiFi Reconnected!");
+        Serial.print("IP: ");
+        Serial.println(WiFi.localIP());
+      #endif
+    }
+    return;                                                  // ok, so return
+  }
+  
+  unsigned long currentMillis = millis();                    //  otherwise, if disconnected...
+  if (!reconnecting) {
+    reconnecting = true;
+    wifi_retry_count = 0;
+    WiFi.setAutoReconnect(true);                            // not necessary as it is default but does not harm
+    #ifdef DEBUG
+      Serial.println("WiFi connection lost... starting reconnection logic");
+    #endif
+  }
+  
+  if (currentMillis - lastWifiRetry >= 10000) {             // increased interval to 10 seconds to give Core >= 3.3. enough time to finish
+    lastWifiRetry = currentMillis;
+    wifi_retry_count++; 
+   #ifdef DEBUG
+    Serial.print("Retrying... Attempt ");
+    Serial.println(wifi_retry_count);
+   #endif
+   #ifdef LOGFILE
+    File f = SPIFFS.open("/logfile.txt", "a");
+    if (f) {
+      f.printf("%s WIFI RECONNECT ATTEMPT %i\n", timeSaver, wifi_retry_count);
+      f.close();
+    }
+   #endif 
+    WiFi.disconnect();
+    //WiFi.reconnect();
+    WiFi.begin();                                         // no args → uses stored credentials from WiFiManager (more robust approach than WiFi.reconnect()
+   
+    if (wifi_retry_count >= 10) {                         // if reconnection attempts have failed
+      #ifdef DEBUG
+        Serial.println("Reconnection failed 10 times. Restarting ESP...");
+      #endif
+      P.displayReset();
+      P.print("Lost WiFi...");
+      delay(1000);
+      P.print("Restarting...");
+      delay(1000);
+      ESP.restart();
+    }
+  }
+}
+ /*
  void wifiReconnect(){                                            // reconnection if WiFi is lost during operation - required only for ESP32
    uint8_t  wifi_retry=0;                                         // Number of reconnection attemps
    P.displayReset();
@@ -929,6 +1126,7 @@ void wificonnect(){                                                   // read ht
       P.displayReset();
    }
  }
+*/
 #endif
 
 
@@ -1014,7 +1212,66 @@ void utf8AsciiConvert(char* src, char*des)                 // converts array for
 
 //// TIME AND DATE FUNCTIONS ////
 
+void getTimeFromServer(){
+  uint8_t  time_retry=0;                                         // Counter retry counts time server
+  struct tm initial;                                             // temp struct for checking if year==1970 (no received time information means year is 1970)
+  initial.tm_year=70;
+  
+ #ifdef ESP32 
+  configTzTime(timezone, ntpServer);                             // adjust your local time zone with variable timezone
+ #else
+  if (esp8266::coreVersionNumeric() >= 20700000){               
+    configTime(timezone, ntpServer); 
+  } else {                                                      // compatibility with ESP8266 Arduino Core Versions < 2.7.0
+    setenv("TZ", timezone , 1);
+    configTime(0, 0, ntpServer);
+  }                            
+ #endif 
+  
+   while(initial.tm_year == 70 && time_retry < 20){                 
+  #ifdef ESP32
+    #if ESP_ARDUINO_VERSION_MAJOR < 3                                       
+      if (sntp_getreachability(0) != 0){                                         // if sntp_getreachability(0) == 0 -> ntp server call failed
+    #else
+      if (esp_sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED){
+    #endif
+   #else                                                                         // for ESP8266
+      if (sntp_getreachability(0) != 0){
+   #endif   
+     
+     time_t now = time(NULL);
+     localtime_r(&now, &initial);
+   }
 
+  #ifdef DEBUG
+   Serial.print("Time Server connection attempt: ");
+   Serial.println(time_retry + 1);
+   Serial.print("current year: ");
+   Serial.println(1900 + initial.tm_year);
+  #endif
+
+  delay(500);
+  time_retry++;
+  }
+
+  if (time_retry >=20){
+    #ifdef DEBUG
+      Serial.println("Connection to time server failed");
+    #endif  
+  } else {
+    time_t now = time(NULL);
+    localtime_r(&now, &tm);
+    if (enableTime==1){
+      strftime (timeshow, sizeof(timeshow), "%H:%M", &tm);
+    #ifdef DEBUG
+      Serial.print("Successfully requested current time from server: ");
+      Serial.println(timeshow); 
+    #endif
+    }
+  }
+}
+
+/*
 void getTimeFromServer(){
   uint8_t  time_retry=0;                                         // Counter retry counts time server
  #ifdef ESP32 
@@ -1064,7 +1321,7 @@ void getTimeFromServer(){
     }
   }
 }
-
+*/
 
 void makeDate() {
   char buf1[20]; 
@@ -1073,7 +1330,7 @@ void makeDate() {
   char buf4[20];
   uint8_t weekday;
 
-  time_t now = time(&now);
+  time_t now = time(NULL);
   localtime_r(&now, &tm);
 
   if (enableDate == 1){
@@ -1121,12 +1378,14 @@ void makeDate() {
   Serial.print("Date: ");
   Serial.println(dateshow);
 #endif
+
+  lastDayRun = tm.tm_mday;                                                           // writes current value
 }
 
 
 void displayTime() {                                                                // standard case: if messages other than time are activated
   static time_t lastminute = 0;
-  time_t now = time(&now);
+  time_t now = time(NULL);
   localtime_r(&now, &tm);
   if (tm.tm_min != lastminute) {
     lastminute = tm.tm_min;
@@ -1137,16 +1396,18 @@ void displayTime() {                                                            
       Serial.println(timeshow);
      #endif
     }
+  }   
+  //if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
+  if (tm.tm_mday != lastDayRun) {                                                     // run makeDate() when day has changed
+    makeDate();
   }
-    
-  if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
 }
 
 
 void displayOnlyTime() {                                                            // special case: if only time message is activated -> hh:mm:ss
   P.setTextAlignment(PA_CENTER);
   static time_t lastsecond = 0;
-  time_t now = time(&now);
+  time_t now = time(NULL);
   localtime_r(&now, &tm);
   if (tm.tm_sec != lastsecond) {
     lastsecond = tm.tm_sec;
@@ -1160,11 +1421,14 @@ void displayOnlyTime() {                                                        
       P.displayClear();                                                             // display shows nothing
     }
    }
-  if (millis() - previoustimecall > (60* 10000)){                                   // gets time from server every 60 minutes
+  if (millis() - previoustimecall > (60* 60000)){                                   // gets time from server every 60 minutes
     getTimeFromServer();                                         
     previoustimecall=millis();
   }    
-  if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();
+  //if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
+  if (tm.tm_mday != lastDayRun) {                                                     // run makeDate() when day has changed
+    makeDate();
+  }
 }
 
 
@@ -1519,7 +1783,7 @@ void spoticallback() {                               // handles complete Spotify
   #endif
   bool authSuccess = false;
   HTTPClient http;
-  if(http.begin("https://accounts.spotify.com/api/token", digicert_CA_pem)) {
+  if(http.begin("https://accounts.spotify.com/api/token", cert_spotify_account)) {
     
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
     String completeAuth = "grant_type=authorization_code&code=" + oneTimeCode + "&redirect_uri=" + String(redirectUri) + "&client_id=" + String(clientID) + "&client_secret=" + String(clientSecret);
@@ -1601,7 +1865,7 @@ void refreshSpotify(){                                                      // d
     #endif 
     HTTPClient http;
   
-    if(http.begin("https://accounts.spotify.com/api/token", digicert_CA_pem)){
+    if(http.begin("https://accounts.spotify.com/api/token", cert_spotify_account)){
       http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
       http.addHeader("Authorization", auth);
   
@@ -1668,7 +1932,7 @@ void parseSpotify(){                                  // calls Spotify api with 
     Serial.println("Calling Spotify for currently playing");
   #endif
 
-  if(http.begin("https://api.spotify.com/v1/me/player/currently-playing", digicert_CA_pem)){
+  if(http.begin("https://api.spotify.com/v1/me/player/currently-playing", cert_spotify_api)){
     http.addHeader("Accept", "application/json");
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", accesstoken);
@@ -1735,13 +1999,36 @@ http.end();
 }
 
 
+bool loadCertificate(const char* path, char* destBuffer, size_t maxBufferSize) {          // loads certificate files needed for Spotify
+    File f = SPIFFS.open(path, "r");
+    if (!f) {
+        #ifdef DEBUG
+          Serial.printf("%s not found\n", path);
+        #endif
+        return false;
+    }
+    
+    f.setTimeout(300);
+    size_t fileSize = f.size();
+    if (fileSize == 0 || fileSize >= maxBufferSize) {
+        #ifdef DEBUG
+          Serial.printf("Cert file %s invalid or too large!\n", path);
+        #endif
+        f.close();
+        return false;
+    }
+    
+    size_t bytesRead = f.readBytes(destBuffer, fileSize);
+    destBuffer[bytesRead] = '\0';
+    f.close();
+    return true;
+}
 
 void loadSpotifyAuth() {                                                      // loads Spotify authentication data from file on SPIFFS on startup
     File f = SPIFFS.open("/spotifyAuth.txt", "r");
     String temp = f.readStringUntil('\n');
     temp.trim();
     auth = temp;
-    P.setIntensity(intens);
     String temp2 = f.readStringUntil('\n');
     temp2.trim();
     refreshtoken = temp2;
@@ -1753,6 +2040,17 @@ void loadSpotifyAuth() {                                                      //
       Serial.println(refreshtoken);
     #endif
     f.close();
+
+   if (loadCertificate("/cert_spot.txt", cert_spotify_account, sizeof(cert_spotify_account))){
+    #ifdef DEBUG 
+     Serial.println("Server Certificate ACCOUNT loaded successfully");
+    #endif 
+    }
+    if (loadCertificate("/cert_spot_api.txt", cert_spotify_api, sizeof(cert_spotify_api))){
+    #ifdef DEBUG 
+     Serial.println("Server Certificate API loaded successfully");
+    #endif 
+    }
 }
 
 #endif                                    // end #ifdef SPOTIFY
@@ -2025,7 +2323,7 @@ void showAdvanced (){                                                           
     #endif
   }
  String temp = "{" + dlf[0] + "," + dlf[1] + "," + dlf[2] + "," + dlf[3] + ",\"EnableTime\":\"" + enableTime + "\" ,\"EnableDate\":\"" + enableDate + "\", \"EnableWeath\":\"" + enableWeath + "\", \"EnableNews1\":\"" + enableNews1 + "\", \"EnableSpot\":\"" + enableSpotify + "\", \"EnableNews2\":\"" + enableNews2 + "\" ,\"EnableOwn\":\"" + enableOwn + "\" ,\"EnableOwn\":\"" + enableOwn + "\"}";
- 
+
  server.send(200, "application/json", temp);
  #ifdef DEBUG
   Serial.print("String: ");
@@ -2156,7 +2454,7 @@ void handleAdvanced (){                                                  // proc
   enableTime = server.arg("MyEnableTime").toInt();
   enableOrDisable(locationTime, timeshow, enableTime, 2);
   if (enableTime==1){
-      time_t now = time(&now);
+      time_t now = time(NULL);
       localtime_r(&now, &tm);
       strftime (timeshow, sizeof(timeshow), "%H:%M", &tm);
   }
@@ -2323,7 +2621,7 @@ void loadAllMessages (uint8_t defmessage, bool avoidOnStartup) {                
     enableTime = lineTime.toInt();
     enableOrDisable(locationTime, timeshow, enableTime, 2);
     if (enableTime==1){
-      time_t now = time(&now);
+      time_t now = time(NULL);
       localtime_r(&now, &tm);
       strftime (timeshow, sizeof(timeshow), "%H:%M", &tm);
   }
@@ -2737,7 +3035,7 @@ void listener() {                                                  // handles al
 
  
 
-void setup(void){
+void setup(void){       
   P.begin();                                 // Parola begin
   #ifdef DEBUG
     Serial.begin(57600);
@@ -2818,7 +3116,8 @@ void loop(void){
 
 #ifdef ESP32                      // necessary only for ESP32 to reconnect if WiFi connection was lost
   if(AP_established == false){
-      if (WiFi.status() != WL_CONNECTED) wifiReconnect();
+      //if (WiFi.status() != WL_CONNECTED) wifiReconnect();
+      wifiReconnect();
   }
 #endif
   
