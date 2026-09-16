@@ -58,9 +58,9 @@ Thanks to the many, many other programmers and enthusiasts in the web whose work
 ***ESP8266***<br>
 In some rare cases, there can occur some heap problems calling weather Data - but only if debug mode is active. So if you don't need it, disable debugging and everything works fine. (I was able to confirm this, writing the successful calls of weather data into a log file for several days.)<br>
 <br>
-## We're going XXL...<br>
+## 📢 &nbsp; We're going XXL...<br>
 Have you become a Multidisplay enthusiast, and would you like to get even more exciting features?<br>
 Do you know how the code works and are you able to set up everything without issues?<br>
-**Then you are qualified to take a look at the new expert version [Tobers Multidisplay XXL](https://github.com/ElToberino/Tobers_Multidisplay_XXL).** <br>
+**Then you are qualified to take a look at the new expert version [Tobers Multidisplay XXL](https://github.com/ElToberino/Tobers_Multidisplay_XXL).  🚀** <br>
 <br>
 <br>
