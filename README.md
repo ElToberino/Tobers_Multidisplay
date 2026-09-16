@@ -36,14 +36,16 @@ Please note that Spotify has recently limited the lifetime of the refreshtoken; 
 If you have problems connecting to Spotify, please check if the TLS certificates (saved in *cert_spot.txt* and *cert_spot_api.txt*) have changed. You can find this out with your browser: Go to *accounts.spotify.com* and *api.spotify.com*, click the key symbol in the address bar and compare the certificates. If they are different, change the files and upload them (a restart is required after that).
 <br>
 
-**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hackster.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and a video there.**<br><br>
+**For complete an detailed information about the setup of the device and the steps to be taken before compiling please visit the [article I wrote at hackster.io](https://www.hackster.io/eltoberino/tobers-multidisplay-for-esp8266-and-esp32-17cac9). You will also find some more pictures and a video there.**<br>
+<br>
+<br>
 
 **Credits**<br>
 This project wouldn't have been possible without the work of many others:
 * Special thanks to Marco Colli (MajicDesigns) for his libraries, the excellent documentation and the support via arduino forum
 * Special thanks to Benoit Blanchon for his great Arduino Json Library and his friendly support
 * Local language concept and some parts of weather functions inspired by ericBcreator and his [really nice display project](https://www.hackster.io/ericBcreator/1024-led-matrix-wifi-message-board-with-menu-web-interface-1b2666)
-* SPIFFS administration taken and adopted from the great Arduino ESP website https://fipsok.de/ by Jens Fleischer
+* SPIFFS administration taken and adapted from the great Arduino ESP website https://fipsok.de/ by Jens Fleischer
 * HTML background pattern graphic by Henry Daubrez, taken from http://thepatternlibrary.com/ <br>
 
 Thanks to the many, many other programmers and enthusiasts in the web whose work and helpfulness enabled me to realize such a project.<br>
@@ -53,11 +55,12 @@ Thanks to the many, many other programmers and enthusiasts in the web whose work
 <br>
 <br><br>
 **Known Issues**<br>
-<br>
-***ESP32***<br>
-Sometimes after skipping the config portal ( - regular setup with Wifi credentials works fine - ) the webserver can't be reached, though the AP has been established. Power cycling the ESP32 can help. <br>
-*I guess this could be related to another known issue [connection only every second time](https://github.com/espressif/arduino-esp32/issues/2501#). You won't notice that issue, because I made a workaround for this in the code.*<br>
-<br>
-
 ***ESP8266***<br>
-In some rare cases, there can occur some heap problems calling weather Data - but only if debug mode is active. So if you don't need it, disable debugging and everything works fine. (I was able to confirm this, writing the successful calls of weather data into a log file for several days.)
+In some rare cases, there can occur some heap problems calling weather Data - but only if debug mode is active. So if you don't need it, disable debugging and everything works fine. (I was able to confirm this, writing the successful calls of weather data into a log file for several days.)<br>
+<br>
+## We're going XXL...<br>
+Have you become a Multidisplay enthusiast, and would you like to get even more exciting features?<br>
+Do you know how the code works and are you able to set up everything without issues?<br>
+**Then you are qualified to take a look at the new expert version [Tobers Multidisplay XXL](https://github.com/ElToberino/Tobers_Multidisplay_XXL).** <br>
+<br>
+<br>
