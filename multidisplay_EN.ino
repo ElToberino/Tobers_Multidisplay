@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.9 - 17.09.2026
+//    V 1.4.0 - 18.09.2026
 //
 //    *********************************************
 //
@@ -74,12 +74,8 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.8 -> V 1.3.9:  - changes in getWeatherData();
-//                                   - changes in getNewsData();
-//                                     --> better heap management, no more heap problems on ESP8266 with weather calls when DEBUG active
-//                                    - change in checkIfAP()
-//                                    - changes in composeNews()
-//                                    - comment clean up
+//    CHANGELOG V 1.3.9 -> V 1.4.0:  - change in table structure: ntable for news and wtable for weather instead of maintable
+//                                   --> saves a lot RAM as no more unused weather table slots
 //                                    
 //                                                               
 //    ***************************************************************
@@ -379,14 +375,16 @@ uint8_t degreeF_ascii = 0x90;                      // defines position 144 in UT
 
 // Table for news and weather messages
 
-struct maintable                        // table for weather and news
-{
+struct weathertable {
  char wetcur[500];                      // current weather strings
+};
+weathertable wtable[numberofcities*2]; 
+
+struct newstable {
  char newscur[500];                     // news strings
  char newslink[200];                    // news url strings
 };
-
-maintable table[tablesize];             // number of elements specified by (newssources * numofarticles) or (numberofcities*2)  - depending on which number is larger
+newstable ntable[tablesize];
 
 
 
@@ -1370,11 +1368,11 @@ void getWeatherData() {                                              //gets weat
               snprintf(msgNiederschlag_3h, sizeof(msgNiederschlag_3h),"%s %.1f cm", msgSnow, snow_3h);
             }
 
-            snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
+            snprintf(wtable[w].wetcur, sizeof(wtable[w].wetcur), "%s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
                      msgCurrentWeather, cityname, current_description, msgTemp, current_temp, tempUnit, msgHumidity, 
                      current_humidity, msgClouds, current_clouds, msgNiederschlag_3h, msgWind, wind_speed, getWindDirection(wind_deg).c_str());
 
-            utf8AsciiConvert(table[w].wetcur, table[w].wetcur);
+            utf8AsciiConvert(wtable[w].wetcur, wtable[w].wetcur);
                       
           } else {
             const char* cityname = doc["city"]["name"] | "---";                              // "Vienna"
@@ -1445,7 +1443,7 @@ void getWeatherData() {                                              //gets weat
             
             utf8AsciiConvert(forecast48, forecast48);
             
-            snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s    %s", forecast24, forecast48);
+            snprintf(wtable[w].wetcur, sizeof(wtable[w].wetcur), "%s    %s", forecast24, forecast48);
           }
           weathEverLoaded = true;
         } else {
@@ -1454,10 +1452,11 @@ void getWeatherData() {                                              //gets weat
           #endif
         }
       #ifdef DEBUG
-        Serial.println(table[w].wetcur);                                  
+        Serial.println(wtable[w].wetcur);                                  
+        Serial.println("----------");
       #endif
       //File f = SPIFFS.open("/logfile.txt", "a");                /// logfile DEBUG -> If you want to use this, remember the file size enlarges with every call !!!
-      //f.printf("%s\n%s\n", timeshow, table[w].wetcur);          /// logfile DEBUG
+      //f.printf("%s\n%s\n", timeshow, wtable[w].wetcur);          /// logfile DEBUG
       //f.close();                                                /// logfile DEBUG
     } else {
       #ifdef DEBUG 
@@ -1554,15 +1553,15 @@ void getNewsData() {
              uint16_t tableIndex = newsmultiplier + i;
              
              if (enableNewsXL == 1) {
-                if (news_ok) snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "%s %s: %s: %s", msgNews, name, title, description);
-                else snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "check news source: %s: no info", ownNewsSources[w].c_str()); 
+                if (news_ok) snprintf(ntable[tableIndex].newscur, sizeof(ntable[tableIndex].newscur), "%s %s: %s: %s", msgNews, name, title, description);
+                else snprintf(ntable[tableIndex].newscur, sizeof(ntable[tableIndex].newscur), "check news source: %s: no info", ownNewsSources[w].c_str()); 
              } else {
-                if (news_ok) snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "%s %s: %s", msgNews, name, title);
-                else snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "check news source: %s", ownNewsSources[w].c_str());
+                if (news_ok) snprintf(ntable[tableIndex].newscur, sizeof(ntable[tableIndex].newscur), "%s %s: %s", msgNews, name, title);
+                else snprintf(ntable[tableIndex].newscur, sizeof(ntable[tableIndex].newscur), "check news source: %s", ownNewsSources[w].c_str());
              }
 
              // === SANITIZATION BLOCK === // Cleans the buffer in-place. Replaces ", \n, \r with safe characters.                
-             char* p = table[tableIndex].newscur;
+             char* p = ntable[tableIndex].newscur;
              while (*p) {
                if (*p == '"') *p = '\'';      // Double quote -> Single quote
                if (*p == '\n') *p = ' ';      // Newline -> Space
@@ -1571,7 +1570,7 @@ void getNewsData() {
              }
              // ================================
              
-             if (news_ok) snprintf(table[tableIndex].newslink, sizeof(table[tableIndex].newslink), "%s", url);
+             if (news_ok) snprintf(ntable[tableIndex].newslink, sizeof(ntable[tableIndex].newslink), "%s", url);
         }
         
         newsEverLoaded = true;
@@ -1582,12 +1581,12 @@ void getNewsData() {
       }
       #ifdef DEBUG
         for (uint8_t i = 0; i < numofarticles; i++) {
-          Serial.println(table[newsmultiplier+i].newscur);
-          Serial.println(table[newsmultiplier+i].newslink);
+          Serial.println(ntable[newsmultiplier+i].newscur);
+          Serial.println(ntable[newsmultiplier+i].newslink);
         }
       #endif
       //File f = SPIFFS.open("/logfile.txt", "a");                                                                                                  /// logfile DEBUG -> If you want to use this, remember the file size enlarges with every call !!!
-      //f.printf("%s\n%s\n%s\n%s\n", timeshow, table[newsmultiplier].newscur, table[newsmultiplier+1].newscur, table[newsmultiplier+2].newscur);    /// logfile DEBUG
+      //f.printf("%s\n%s\n%s\n%s\n", timeshow, ntable[newsmultiplier].newscur, ntable[newsmultiplier+1].newscur, ntable[newsmultiplier+2].newscur);    /// logfile DEBUG
       //f.close();                                                                                                                                  /// logfile DEBUG
    } else {
       #ifdef DEBUG 
@@ -2130,7 +2129,7 @@ void composeNews(uint8_t startPos) {                                            
   temp = "{";
   
   for (uint8_t t=startPos; t<(startPos+6); t++){
-    String newsline = table[t].newscur;
+    String newsline = ntable[t].newscur;
     
     if (t==startPos) {
       source[0] = newsline.substring(0,newsline.indexOf(':'));
@@ -2141,7 +2140,7 @@ void composeNews(uint8_t startPos) {                                            
     
     String postnews = newsline.substring(newsline.indexOf(':')+1);                       // cuts News from presenter,eg: "News von Spiegel-Online:"
     postnews.replace("\"", "\\\"");                                                      // keeps quotation marks during sending to html page
-    String postlink = table[t].newslink;
+    String postlink = ntable[t].newslink;
     
     temp += "\"News";
     temp += t;
@@ -2938,7 +2937,7 @@ void setup(void){
       loadAllMessages(2, false);                    
   }
   
-  if (enableNews1==0 && enableNews2==0) snprintf(table[0].newscur, sizeof(table[0].newscur), "%s", msgNoNews);     // message shown in news.html when no news loaded
+  if (enableNews1==0 && enableNews2==0) snprintf(ntable[0].newscur, sizeof(ntable[0].newscur), "%s", msgNoNews);     // message shown in news.html when no news loaded
 
 #ifdef SPOTIFY
   loadSpotifyAuth();
@@ -3079,21 +3078,21 @@ if (P.displayAnimate())                                                         
       
     if (i==(locationWeath-1)) {
         if (enableWeath == 1){
-          snprintf(showweather, sizeof(showweather), "%s",  table[a].wetcur);     // loading weather info into "showweather"
+          snprintf(showweather, sizeof(showweather), "%s",  wtable[a].wetcur);     // loading weather info into "showweather"
           a++;
        }
     }
 
     if (i==(locationNews[0]-1)) {                                                 // loading news into "shownews1"
         if (enableNews1 == 1){
-          utf8AsciiConvert(table[b].newscur,shownews);
+          utf8AsciiConvert(ntable[b].newscur,shownews);
           b++;
       }
     }
 
     if (i==(locationNews[1]-1)) {                                                 // loading news into "shownews2"
         if (enableNews2 == 1){
-          utf8AsciiConvert(table[b].newscur,shownews2);
+          utf8AsciiConvert(ntable[b].newscur,shownews2);
           b++;
       }
     }
@@ -3117,9 +3116,9 @@ if (P.displayAnimate())                                                         
     
     if (i == ARRAY_SIZE(catalog)) i= 1;                                            // loop main array without first message
      
-    if (a == numberofcities*2) a= 0;                                               // loop weather data
+    if (a == ARRAY_SIZE(wtable)) a= 0;                                               // loop weather data
  
-    if (b == ARRAY_SIZE(table)) b = 0;                                             // loop news data
+    if (b == ARRAY_SIZE(ntable)) b = 0;                                             // loop news data
   }
  }    
 }
