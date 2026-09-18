@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.3.8 - 04.09.2026
+//    V 1.3.9 - 17.09.2026
 //
 //    *********************************************
 //
@@ -74,12 +74,12 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.7 -> V 1.3.8:  - changes in Wifi functions
-//                                   - changes in time an date functions
-//                                   - spotify certificate loaded from file
-//                                     --> new files cert_spot.txt, cert_spot_api.txt
-//                                         change in loadSpotifyAuth()
-//                                         new bool loadCertificate() 
+//    CHANGELOG V 1.3.8 -> V 1.3.9:  - changes in getWeatherData();
+//                                   - changes in getNewsData();
+//                                     --> better heap management, no more heap problems on ESP8266 with weather calls when DEBUG active
+//                                    - change in checkIfAP()
+//                                    - changes in composeNews()
+//                                    - comment clean up
 //                                    
 //                                                               
 //    ***************************************************************
@@ -93,7 +93,7 @@
 
 //#define SPOTIFY                                 // works only on ESP32; ESP8266 crashes due to lack of heap on establishing https connection
 
-//#define  DEBUG                                  // show debug messages in serial monitor
+#define  DEBUG                                  // show debug messages in serial monitor
                                                     // NOTES only for ESP8266: - with DEBUG active, in some (special and rare) situations loading weather data can fail due to lack of heap 
 
 
@@ -914,127 +914,7 @@ File f = SPIFFS.open("/IP_mode.txt", "r");
   }
 }
 
-/*
-void wificonnect(){                                                   // read https://forum.arduino.cc/index.php?topic=652513 to understand how WiFi setup works on ESP
 
-  #ifdef WIFI_IS_OFF_AT_BOOT                                          // enables WiFi connection on start up (restores original ESP8266 behaviour, which is disabled by default since ESP8266 core V 3.0)
-    enableWiFiAtBootTime();                                           // see: https://github.com/esp8266/Arduino/blob/master/doc/esp8266wifi/generic-class.rst#persistent
-  #endif
-  
-  uint8_t  wifi_retry=0;                                              // Counter solves ESP32-Bug with certain routers where connection can only be established every second time
-  uint8_t  staticIP = 0;
-
-  File f = SPIFFS.open("/IP_mode.txt", "r");                          // reads information saved on SPIFFS file if device shall connect with static IP
-  String temp0 = f.readStringUntil('\n');
-  temp0.trim();
-  staticIP = temp0.toInt();
-  String temp1 = f.readStringUntil('\n');
-  temp1.trim();
-  uint32_t IP_raw1 = temp1.toInt();
-  IPAddress ip(IP_raw1);
-  String temp2 = f.readStringUntil('\n');
-  temp2.trim();
-  uint32_t IP_raw2 = temp2.toInt();
-  IPAddress gateway(IP_raw2);
-  String temp3 = f.readStringUntil('\n');
-  temp3.trim();
-  uint32_t IP_raw3 = temp3.toInt();
-  IPAddress subnet(IP_raw3);
-  String temp4 = f.readStringUntil('\n');
-  temp4.trim();
-  uint32_t IP_raw4 = temp4.toInt();
-  IPAddress dns(IP_raw4);
-  f.close();
-
-  #ifdef DEBUG
-    Serial.println("IP Configuration loaded from SPIFFS:");
-    Serial.print("Static IP enabled: ");
-    Serial.println(staticIP);
-    if (staticIP == 1) {
-      Serial.print("IP: ");
-      Serial.println(ip);
-      Serial.print("Gateway: ");
-      Serial.println(gateway);
-      Serial.print("Subnet: ");
-      Serial.println(subnet);
-      Serial.print("DNS: ");
-      Serial.println(dns);
-    }
-  #endif
-  
-  if (staticIP == 1) WiFi.config(ip, gateway, subnet, dns);             // sets static IP parameters
-  WiFi.softAPdisconnect(true);                                          // closes AP mode on startup to avoid ESP working as AP during normal operation
-  
-#ifdef ESP32
-  while (WiFi.status() != WL_CONNECTED && wifi_retry < 3) {
-#else
-  while (WiFi.waitForConnectResult() != WL_CONNECTED && wifi_retry < 3) {
-#endif
-        #ifdef DEBUG
-          Serial.print("Not yet connected...retrying - Attempt No. ");
-          Serial.println(wifi_retry+1);
-        #endif
-        WiFi.begin();
-        delay(3000);
-        wifi_retry++;
-  } 
-
-  if(wifi_retry >= 3) {
-        #ifdef DEBUG
-          Serial.println("no connection, starting AP");
-          Serial.println("Notice on Display: Portal");
-          Serial.println("... starting AP");
-        #endif
-        P.print("no Wifi --> AP");
-        WiFiManager wifiManager;
-      #ifndef SPOTIFY                                                         // this doesn't work with SPOTIFY defined on ESP32 !
-        wifiManager.setAPStaticIPConfig(AP_IP, AP_IP, AP_Netmask);            // if #define SPOTIFY default ESP IP 192.168.4.1 is set
-      #endif
-        wifiManager.setConfigPortalTimeout(300);                              // timeout for configportal in seconds
-        wifiManager.startConfigPortal(AP_NAME, AP_PW);
-
-         if (wifiManager.getTimeoutState() == true) {                         // if config portal has timed out, ESP restarts(necessary after power blackout, when WiFi network needs some time to start up again)
-          #ifdef DEBUG                                                        // (necessary after power blackout, when Home WiFi network needs some time to start up)
-            Serial.println("Config Portal has timed out. Restarting...");
-          #endif
-          delay(500);
-          ESP.restart();  
-        }
-        
-        wifiManagerWasCalled = true;
-             
-        if (wifiManager.getStaticMode() == true) {                            // gets information from WiFiManager if connection has been made with static IP
-            static_Mode_enabled = 1;                                          // and writes it to file on SPIFFS for future start ups. 
-          }
-        File f = SPIFFS.open("/IP_mode.txt", "w");
-        f.printf("%i\n%i\n%i\n%i\n%i\n", static_Mode_enabled, uint32_t(WiFi.localIP()), uint32_t(WiFi.gatewayIP()), uint32_t(WiFi.subnetMask()), uint32_t(WiFi.dnsIP()));
-        f.close();
-        #ifdef DEBUG
-          Serial.println("IP Configuration saved on SPIFFS:");
-          Serial.print("Static IP enabled: ");
-          Serial.println(static_Mode_enabled);
-          Serial.print("IP: ");
-          Serial.println(WiFi.localIP());
-          Serial.print("Gateway: ");
-          Serial.println(WiFi.gatewayIP());
-          Serial.print("Subnet: ");
-          Serial.println(WiFi.subnetMask());
-          Serial.print("DNS: ");
-          Serial.println(WiFi.dnsIP());
-        #endif
-  }
- 
-  if (WiFi.waitForConnectResult() == WL_CONNECTED){
-        #ifdef DEBUG
-          Serial.print("Connected to network \"");
-          Serial.print(WiFi.SSID());
-          Serial.print("\" with IP ");
-          Serial.println(WiFi.localIP());
-        #endif
-        P.displayReset();
-  }
-}                                                                 // end of wificonnect()
-*/
 #ifdef ESP32                                                           
  void wifiReconnect() {
   static unsigned long lastWifiRetry = 0;
@@ -1095,42 +975,20 @@ void wificonnect(){                                                   // read ht
     }
   }
 }
- /*
- void wifiReconnect(){                                            // reconnection if WiFi is lost during operation - required only for ESP32
-   uint8_t  wifi_retry=0;                                         // Number of reconnection attemps
-   P.displayReset();
-   P.print("lost WiFi - retrying..."); 
-   while (WiFi.status() != WL_CONNECTED && wifi_retry < 10) {
-      #ifdef DEBUG
-        Serial.print("WiFi connection lost...retrying - Attempt No. ");
-        Serial.println(wifi_retry+1);
-      #endif
-      WiFi.begin();
-      delay(3000);
-      wifi_retry++;
-   } 
-
-   if(wifi_retry >= 10) {
-      #ifdef DEBUG
-        Serial.println("reconnection impossible, restarting");
-      #endif
-      delay(1000);
-      ESP.restart();
-   }
- 
-   if (WiFi.waitForConnectResult() == WL_CONNECTED){
-      #ifdef DEBUG
-        Serial.println("successfully reconnected as");
-        Serial.println(WiFi.localIP());
-      #endif
-      P.displayReset();
-   }
- }
-*/
 #endif
 
 
 void checkIfAP(){                                                                      // Opens Access Point if captive portal is skipped via "Exit"
+ #ifdef ESP32                
+  if (WiFi.status() != WL_CONNECTED && wifiManagerWasCalled == true) {                 // --- extra waiting time für slow routers / wifi (ESP32 continues connecting in background)
+    P.print("connecting...");                             
+    for (int i = 0; i < 20; i++) {                                                     // max 10 seconds (20 x 500ms)
+      if (WiFi.status() == WL_CONNECTED) break;
+      delay(500);
+    }
+  }
+ #endif
+  
   if (WiFi.status() != WL_CONNECTED && wifiManagerWasCalled == true) {
           WiFi.mode(WIFI_AP);
           delay(500);
@@ -1271,57 +1129,6 @@ void getTimeFromServer(){
   }
 }
 
-/*
-void getTimeFromServer(){
-  uint8_t  time_retry=0;                                         // Counter retry counts time server
- #ifdef ESP32 
-  configTzTime(timezone, ntpServer);                             // adjust your local time zone with variable timezone
- #endif 
-  struct tm initial;                                             // temp struct for checking if year==1970 (no received time information means year is 1970)
-  initial.tm_year=70;
-  
-  while(initial.tm_year == 70 && time_retry < 15){                 
-  #ifdef ESP32                                                   // get time from NTP server (ESP32)
-   getLocalTime(&initial);                                       
-  #else                                                          // get time from NTP server (ESP8266)
-   if (esp8266::coreVersionNumeric() >= 20700000){               
-      configTime(timezone, ntpServer); 
-   } else {                                                      // compatibility with ESP8266 Arduino Core Versions < 2.7.0
-      setenv("TZ", timezone , 1);
-      configTime(0, 0, ntpServer);
-   }                            
-  #endif 
-   delay(500);
-   if (sntp_getreachability(0) != 0){                            // if sntp_getreachability(0) == 0 -> ntp server call failed
-    time_t now = time(&now);
-    localtime_r(&now, &initial);
-   }
-  #ifdef DEBUG
-   Serial.print("Time Server connection attempt: ");
-   Serial.println(time_retry + 1);
-   Serial.print("current year: ");
-   Serial.println(1900 + initial.tm_year);
-  #endif
-   time_retry++;
-  }
-
-  if (time_retry >=15){
-    #ifdef DEBUG
-      Serial.println("Connection to time server failed");
-    #endif  
-  } else {
-    time_t now = time(&now);
-    localtime_r(&now, &tm);
-    if (enableTime==1){
-      strftime (timeshow, sizeof(timeshow), "%H:%M", &tm);
-    #ifdef DEBUG
-      Serial.print("Successfully requested current time from server: ");
-      Serial.println(timeshow); 
-    #endif
-    }
-  }
-}
-*/
 
 void makeDate() {
   char buf1[20]; 
@@ -1397,7 +1204,6 @@ void displayTime() {                                                            
      #endif
     }
   }   
-  //if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
   if (tm.tm_mday != lastDayRun) {                                                     // run makeDate() when day has changed
     makeDate();
   }
@@ -1425,7 +1231,6 @@ void displayOnlyTime() {                                                        
     getTimeFromServer();                                         
     previoustimecall=millis();
   }    
-  //if (tm.tm_hour == 0 && tm.tm_min == 0 && tm.tm_sec == 0) makeDate();              // at 0:00 make new date
   if (tm.tm_mday != lastDayRun) {                                                     // run makeDate() when day has changed
     makeDate();
   }
@@ -1441,8 +1246,7 @@ String getWindDirection (int degrees) {
 
 
 void getWeatherData() {                                              //gets weather data for all data and saves it into table.wetcur                      
-   static bool currentWeath = true;
-   String units;
+   const char* units;
    uint8_t tempUnit;
    if (imperial == false){
       units = "metric";
@@ -1451,64 +1255,115 @@ void getWeatherData() {                                              //gets weat
       units = "imperial";
       tempUnit = degreeF_ascii;
    }
+   
+   JsonDocument doc;
+   JsonDocument filter;
    WiFiClient client;
    HTTPClient http;
   
    #ifdef DEBUG
-    Serial.println("Calling Weather");
+    Serial.println("Calling Weather API openweathermap.org");
    #endif
+
+   String url;
+   url.reserve(200);                                                    // Pre-allocate for URL, avoids Heap fragmentation
     
   for (uint8_t w=0; w<numberofcities*2; w++){
-      String cityID = ownCityIDs[WeatherCityLoop];
-      String url;
-  
-      if (currentWeath){                                                                
-        url = "http://api.openweathermap.org/data/2.5/weather?id=" + cityID + "&units=" + units + "&lang=" + weatherLanguage + "&APPID=" + WeatherApiKey;
+      doc.clear();
+      filter.clear();
+      
+      bool currentWeath = (w < numberofcities);
+      String cityID = ownCityIDs[w % numberofcities];                   // Uses original cityIDs array
+    
+      if (currentWeath){
+        url = "http://api.openweathermap.org/data/2.5/weather?id=";
+        url += cityID;
+        url += "&units=";
+        url += units;
+        url += "&lang=";
+        url += weatherLanguage;
+        url += "&APPID=";
+        url += WeatherApiKey;
       } else {
-        url ="http://api.openweathermap.org/data/2.5/forecast?id=" + cityID + "&units=" + units + "&cnt=16&lang=" + weatherLanguage + "&APPID=" + WeatherApiKey; 
+        url = "http://api.openweathermap.org/data/2.5/forecast?id=";
+        url += cityID;
+        url += "&units=";
+        url += units;
+        url += "&cnt=16&lang=";
+        url += weatherLanguage;
+        url += "&APPID=";
+        url += WeatherApiKey;
       }
   
-      if(http.begin(client,url)){    
+      if(http.begin(client,url)){
+        http.setReuse(true);
         int httpCode = http.sendRequest("GET");
+
         #ifdef DEBUG  
           Serial.println(httpCode);
         #endif    
+        
         if(httpCode == 200) {
-          
-          DynamicJsonDocument doc(12000);
-          DeserializationError error = deserializeJson(doc, http.getStream());
+                           
+           if (currentWeath) {
+            filter["name"] = true;                                      // Needed to parse the city name
+            filter["weather"][0]["description"] = true;
+            JsonObject filter_main = filter["main"].to<JsonObject>();
+            filter_main["temp"] = true;
+            filter_main["humidity"] = true;
+            JsonObject filter_wind = filter["wind"].to<JsonObject>();
+            filter_wind["speed"] = true;
+            filter_wind["deg"] = true;
+            filter["rain"]["3h"] = true;
+            filter["snow"]["3h"] = true;
+            filter["clouds"]["all"] = true;
+           } else {
+            filter["city"]["name"] = true;                              // Needed to parse the city name
+            JsonObject filter_list_0 = filter["list"].add<JsonObject>();
+            filter_list_0["dt_txt"] = true;
+            JsonObject filter_list_0_main = filter_list_0["main"].to<JsonObject>();
+            filter_list_0_main["temp"] = true;
+            filter_list_0_main["humidity"] = true;
+            filter_list_0["weather"][0]["description"] = true;
+            filter_list_0["clouds"]["all"] = true;
+            JsonObject filter_list_0_wind = filter_list_0["wind"].to<JsonObject>();
+            filter_list_0_wind["speed"] = true;
+            filter_list_0_wind["deg"] = true;
+            filter_list_0["rain"]["3h"] = true;
+            filter_list_0["snow"]["3h"] = true;
+          }
+            
+          DeserializationError error = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
           
           if (error) {
             #ifdef DEBUG 
               Serial.println("deserializeJson() failed: ");
               Serial.println(error.c_str());
-              #endif
+            #endif
             //File f = SPIFFS.open("/logfile.txt", "a");              /// logfile DEBUG -> If you want to use this, remember the file size enlarges with every call !!!
             //f.printf("%s\n%s\n", timeshow, "ERROR WEATHER");        /// logfile DEBUG
             //f.close();                                              /// logfile DEBUG
-            return;
+            http.end();
+            continue;
           }
             
           if (currentWeath) {
 
+            const char* cityname = doc["name"] | "---";             // Vienna
+
             JsonObject weather_0 = doc["weather"][0];
-            const char* current_description = weather_0["description"];           // "clear sky"
+            const char* current_description = weather_0["description"]| "---";           // "clear sky"
 
             JsonObject main = doc["main"];                  // EXAMPLE:
             float current_temp = main["temp"];              // -0.44
             uint8_t current_humidity = main["humidity"];    // 92
-            float main_temp_min = main["temp_min"];         // -2.78
-            float main_temp_max = main["temp_max"];         // 2.22
             float wind_speed = doc["wind"]["speed"];        // 0.5
             int wind_deg = doc["wind"]["deg"];              // 260
             float rain_3h = doc["rain"]["3h"];              // 0.19
-            float snow_3h = 0;
-            snow_3h = doc["snow"]["3h"];
-             
+            float snow_3h = doc["snow"]["3h"] | 0.0f;           
             uint8_t current_clouds = doc["clouds"]["all"];  // 25
-            const char* cityname = doc["name"];             // Vienna
-
-            char msgNiederschlag_3h[20];
+            
+            char msgNiederschlag_3h[20];     
             if (snow_3h == 0){
               snprintf(msgNiederschlag_3h, sizeof(msgNiederschlag_3h),"%s %.1f mm", msgRain, rain_3h);
             } else {
@@ -1516,68 +1371,59 @@ void getWeatherData() {                                              //gets weat
             }
 
             snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
-            msgCurrentWeather, cityname, current_description, msgTemp, current_temp, tempUnit, msgHumidity, current_humidity, msgClouds, current_clouds,
-            msgNiederschlag_3h, msgWind, wind_speed, getWindDirection(wind_deg).c_str());
+                     msgCurrentWeather, cityname, current_description, msgTemp, current_temp, tempUnit, msgHumidity, 
+                     current_humidity, msgClouds, current_clouds, msgNiederschlag_3h, msgWind, wind_speed, getWindDirection(wind_deg).c_str());
 
             utf8AsciiConvert(table[w].wetcur, table[w].wetcur);
-      
+                      
           } else {
-       
+            const char* cityname = doc["city"]["name"] | "---";                              // "Vienna"
+
             JsonArray list = doc["list"];
 
             JsonObject list_7 = list[7];
-            const char* time7 = list_7["dt_txt"];
+            const char* time7 = list_7["dt_txt"]| "0000-00-00 --:--:--";
 
             JsonObject list_7_main = list_7["main"];                       // EXAMPLE:
             float temp24 = list_7_main["temp"];                            // -0.64
-            float tempmin24 = list_7_main["temp_min"];                     // 3.45
-            float tempmax24 = list_7_main["temp_max"];                     // 6.25
             uint8_t humidity24 = list_7_main["humidity"];
 
             JsonObject list_7_weather_7 = list_7["weather"][0];
-            const char* description24 = list_7_weather_7["description"];   // Bedeckt
+            const char* description24 = list_7_weather_7["description"]| "---";   // Bedeckt
             uint8_t clouds24 = list_7["clouds"]["all"];
             float windspeed24 = list_7["wind"]["speed"];                   // 3.1
             int winddeg24 = list_7["wind"]["deg"];                         // 202
             float rain24 = list_7["rain"]["3h"];
-            float snow24 = 0;
-            snow24 = list_7["snow"]["3h"];
+            float snow24 = list_7["snow"]["3h"] | 0.0f; 
 
             JsonObject list_15 = list[15];
-            const char* time15 = list_15["dt_txt"];
+            const char* time15 = list_15["dt_txt"]| "0000-00-00 --:--:--";
 
             JsonObject list_15_main = list_15["main"];
             float temp48 = list_15_main["temp"];
-            float tempmin48 = list_15_main["temp_min"];
-            float tempmax48 = list_15_main["temp_max"];
             uint8_t humidity48 = list_15_main["humidity"];
 
             JsonObject list_15_weather_15 = list_15["weather"][0];
-            const char* description48 = list_15_weather_15["description"];
+            const char* description48 = list_15_weather_15["description"]| "---";
             uint8_t clouds48 = list_15["clouds"]["all"];
             float windspeed48 = list_15["wind"]["speed"];
             int winddeg48 = list_15["wind"]["deg"];
             float rain48 = list_15["rain"]["3h"];
-            float snow48 = 0;
-            snow48 = list_15["snow"]["3h"];
+            float snow48 = list_15["snow"]["3h"] | 0.0f; 
 
-            char msgNiederschlag_24h[20];
+            char msgNiederschlag_24h[20];     
             if (snow24 == 0){
               snprintf(msgNiederschlag_24h, sizeof(msgNiederschlag_24h),"%s %.1f mm", msgRain, rain24);
             } else {
               snprintf(msgNiederschlag_24h, sizeof(msgNiederschlag_24h),"%s %.1f cm", msgSnow, snow24);
             }
 
-            char msgNiederschlag_48h[20];
+            char msgNiederschlag_48h[20];     
             if (snow48 == 0){
               snprintf(msgNiederschlag_48h, sizeof(msgNiederschlag_48h),"%s %.1f mm", msgRain, rain48);
             } else {
               snprintf(msgNiederschlag_48h, sizeof(msgNiederschlag_48h),"%s %.1f cm", msgSnow, snow48);
-            }
-            
-
-            JsonObject city = doc["city"];
-            const char* cityname = city["name"];                              // "Vienna"
+            }            
       
             char time24[6] = {""};
             char time48[6] = {""};
@@ -1589,14 +1435,16 @@ void getWeatherData() {                                              //gets weat
             char forecast48[200] = {""};
 
             snprintf(forecast24, sizeof(forecast24), "%s %s, %s %s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
-            msgForecast, cityname, msg24, time24, msghour, description24, msgTemp, temp24, tempUnit, msgHumidity, humidity24, msgClouds, clouds24,
-            msgNiederschlag_24h, msgWind, windspeed24, getWindDirection(winddeg24).c_str());
+                     msgForecast, cityname, msg24, time24, msghour, description24, msgTemp, temp24, tempUnit, msgHumidity, 
+                     humidity24, msgClouds, clouds24, msgNiederschlag_24h, msgWind, windspeed24, getWindDirection(winddeg24).c_str());
             utf8AsciiConvert(forecast24, forecast24);
 
             snprintf(forecast48, sizeof(forecast48), "%s %s, %s %s %s: %s, %s %.1f %c  %s %d%%  %s %d%%  %s  %s %.0f m/s %s",
-            msgForecast, cityname, dayAfterTomorrow, time48, msghour, description48, msgTemp, temp48, tempUnit, msgHumidity, humidity48, msgClouds, clouds48,
-            msgNiederschlag_48h, msgWind, windspeed48, getWindDirection(winddeg48).c_str());
+                     msgForecast, cityname, dayAfterTomorrow, time48, msghour, description48, msgTemp, temp48, tempUnit, msgHumidity, 
+                     humidity48, msgClouds, clouds48, msgNiederschlag_48h, msgWind, windspeed48, getWindDirection(winddeg48).c_str());
+            
             utf8AsciiConvert(forecast48, forecast48);
+            
             snprintf(table[w].wetcur, sizeof(table[w].wetcur), "%s    %s", forecast24, forecast48);
           }
           weathEverLoaded = true;
@@ -1605,9 +1453,6 @@ void getWeatherData() {                                              //gets weat
             Serial.printf("http error: %i\n", httpCode);
           #endif
         }
-      WeatherCityLoop = (++WeatherCityLoop) % ARRAY_SIZE(ownCityIDs);
-      if (WeatherCityLoop == 0)                                             // after a loop of all cities, swicth from current weather to forecast
-        currentWeath = !currentWeath;
       #ifdef DEBUG
         Serial.println(table[w].wetcur);                                  
       #endif
@@ -1621,7 +1466,9 @@ void getWeatherData() {                                              //gets weat
     }
     http.end();
   }
+  client.stop();
 }
+
 
 
 
@@ -1629,29 +1476,45 @@ void getWeatherData() {                                              //gets weat
 ////  NEWS FUNCTIONS  ////
 
 void getNewsData() {
+  JsonDocument filter;                                             
+  JsonObject filter_articles_0 = filter["articles"].add<JsonObject>();
+  filter_articles_0["source"]["name"] = true;
+  filter_articles_0["title"] = true;
+  filter_articles_0["description"] = true;
+  filter_articles_0["url"] = true;
+  JsonDocument doc;
+  
   WiFiClient client;
   HTTPClient http;
-
+  
   #ifdef DEBUG 
     Serial.println("Calling News");
   #endif
+  String url;
+  url.reserve(150);
  
-  for (uint8_t w=0; w<newssources; w++){                               //loop for number of news sources
-    String url;
+  for (uint8_t w = 0; w < newssources; w++) {                          //loop for number of news sources
+    doc.clear();                        
     uint8_t newsmultiplier = numofarticles * w;                        //newsmultiplier necessary to determine right position in table[].newscur
-  
-    url = "http://newsapi.org/v2/" + ownNewsSources[w] + "&pageSize=3&page=1&apiKey=" + NewsApiKey;
-
-    if(http.begin(client,url)){    
-
+       
+    url = "http://newsapi.org/v2/";
+    url += ownNewsSources[w];
+    url += "&pageSize=";
+    url += numofarticles;
+    url += "&page=1&apiKey=";
+    url += NewsApiKey;
+    
+    if (http.begin(client, url)) {
+      http.setReuse(true);
       int httpCode = http.sendRequest("GET");
+      
       #ifdef DEBUG  
         Serial.println(httpCode);
       #endif
-      if(httpCode == 200) {
-
-        DynamicJsonDocument doc(5000);
-        DeserializationError error = deserializeJson(doc, http.getStream());
+      
+      if (httpCode == 200) {
+        
+        DeserializationError error = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
         
         if (error) {
           #ifdef DEBUG 
@@ -1661,74 +1524,55 @@ void getNewsData() {
           //File f = SPIFFS.open("/logfile.txt", "a");              /// logfile DEBUG -> If you want to use this, remember the file size enlarges with every call !!!
           //f.printf("%s\n%s\n", timeshow, "ERROR NEWS");           /// logfile DEBUG
           //f.close();                                              /// logfile DEBUG
-          return;
+          http.end();
+          continue;
         }
-        
+     
         JsonArray articles = doc["articles"];
-
-        JsonObject articles_0 = articles[0];                                                        // EXAMPLE:
-        bool news0_ok = false;
-        const char* name0;
-        const char* title0;
-        const char* description0;
-        const char* url0;
-        if (articles_0) {                                                                           //see: https://arduinojson.org/v6/api/jsonobject/containskey/                      
-          news0_ok = true;
-          name0 = articles_0["source"]["name"];                                                     // "Spiegel Online"
-          title0 = articles_0["title"];                                                             // "Wahlkampf in Großbritannien: Der Brexit-Vagabund"
-          if (articles_0["description"]) {description0 = articles_0["description"];}     //const char* description0 = articles_0["description"] -> "Der Londoner Tory-Abgeordnete Greg Hands war 2016 gegen den Brexit, mittlerweile wirbt er dafür.... 
-            else {description0 = " - keine Detailinfo verfügbar - ";}
-          url0 = articles_0["url"];                                                                 // "http://www.spiegel.de/politik/ausland/brexit-im-wahlkampf-mit-tory-politiker-greg-hands-a-1300489.html"
-        }
         
-        JsonObject articles_1 = articles[1];
-        bool news1_ok = false;
-        const char* name1;
-        const char* title1;
-        const char* description1;
-        const char* url1;
-        if (articles_1) {
-          news1_ok = true;
-          name1 = articles_1["source"]["name"];
-          title1 = articles_1["title"];
-          if (articles_1["description"]) {description1 = articles_1["description"];} 
-            else {description1 = " - keine Detailinfo verfügbar - ";}
-          url1 = articles_1["url"];
-        }
+        for (uint8_t i = 0; i < numofarticles; i++) {
+             JsonObject article = articles[i];                                                      // EXAMPLE:
+             bool news_ok = false;
+             
+             const char* name = "";
+             const char* title = "";
+             const char* description = "";
+             const char* url = "";
+             
+             if (article) {                                                                         //see: https://arduinojson.org/v6/api/jsonobject/containskey/
+                 news_ok = true;
+                 name = article["source"]["name"] | "---";                                          // "Spiegel Online"
+                 title = article["title"] | "---";                                                  // "Wahlkampf in Großbritannien: Der Brexit-Vagabund"
+                 if (article["description"]) {
+                     description = article["description"];                                          //const char* description0 = articles_0["description"] -> "Der Londoner Tory-Abgeordnete Greg Hands war 2016 gegen den Brexit, mittlerweile wirbt er dafür.... 
+                 } else {
+                     description = " - keine Detailinfo verfügbar - ";
+                 }
+                 url = article["url"] | "";                                                         // "http://www.spiegel.de/politik/ausland/brexit-im-wahlkampf-mit-tory-politiker-greg-hands-a-1300489.html"
+             }
+            
+             uint16_t tableIndex = newsmultiplier + i;
+             
+             if (enableNewsXL == 1) {
+                if (news_ok) snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "%s %s: %s: %s", msgNews, name, title, description);
+                else snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "check news source: %s: no info", ownNewsSources[w].c_str()); 
+             } else {
+                if (news_ok) snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "%s %s: %s", msgNews, name, title);
+                else snprintf(table[tableIndex].newscur, sizeof(table[tableIndex].newscur), "check news source: %s", ownNewsSources[w].c_str());
+             }
 
-        JsonObject articles_2 = articles[2];
-        bool news2_ok = false;
-        const char* name2;
-        const char* title2;
-        const char* description2;
-        const char* url2;
-        if (articles_2) {
-          news2_ok = true;
-          name2 = articles_2["source"]["name"];
-          title2 = articles_2["title"];
-          if (articles_2["description"]) {description2 = articles_2["description"];} 
-            else {description2 = " - keine Detailinfo verfügbar - ";}
-          url2 = articles_2["url"];
+             // === SANITIZATION BLOCK === // Cleans the buffer in-place. Replaces ", \n, \r with safe characters.                
+             char* p = table[tableIndex].newscur;
+             while (*p) {
+               if (*p == '"') *p = '\'';      // Double quote -> Single quote
+               if (*p == '\n') *p = ' ';      // Newline -> Space
+               if (*p == '\r') *p = ' ';      // Carriage Return -> Space
+               p++;
+             }
+             // ================================
+             
+             if (news_ok) snprintf(table[tableIndex].newslink, sizeof(table[tableIndex].newslink), "%s", url);
         }
-
-        if (enableNewsXL==1){
-          if (news0_ok) snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "%s %s: %s: %s", msgNews, name0, title0, description0);
-            else snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "check news source: %s: no info", ownNewsSources[w].c_str());
-          if (news1_ok) snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "%s %s: %s: %s", msgNews, name1, title1, description1);
-            else snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "check news source: %s: no info", ownNewsSources[w].c_str());
-          if (news2_ok)snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "%s %s: %s: %s", msgNews, name2, title2, description2);
-            else snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "check news source: %s: no info", ownNewsSources[w].c_str());
-        } else {
-          if (news0_ok) snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "%s %s: %s", msgNews, name0, title0);
-            else snprintf(table[newsmultiplier].newscur, sizeof(table[newsmultiplier].newscur), "check news source: %s", ownNewsSources[w].c_str());
-          if (news1_ok) snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "%s %s: %s", msgNews, name1, title1);
-            else snprintf(table[newsmultiplier+1].newscur, sizeof(table[newsmultiplier+1].newscur), "check news source: %s", ownNewsSources[w].c_str());
-          if (news2_ok) snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "%s %s: %s", msgNews, name2, title2);
-            else snprintf(table[newsmultiplier+2].newscur, sizeof(table[newsmultiplier+2].newscur), "check news source: %s", ownNewsSources[w].c_str());
-        }
-        if (news0_ok) snprintf(table[newsmultiplier].newslink, sizeof(table[newsmultiplier].newslink), "%s", url0);
-        if (news1_ok)snprintf(table[newsmultiplier+1].newslink, sizeof(table[newsmultiplier+1].newslink), "%s", url1);
-        if (news2_ok)snprintf(table[newsmultiplier+2].newslink, sizeof(table[newsmultiplier+2].newslink), "%s", url2);
         
         newsEverLoaded = true;
       } else {
@@ -1737,12 +1581,10 @@ void getNewsData() {
         #endif 
       }
       #ifdef DEBUG
-        Serial.println(table[newsmultiplier].newscur);
-        Serial.println(table[newsmultiplier+1].newscur);
-        Serial.println(table[newsmultiplier+2].newscur);
-        Serial.println(table[newsmultiplier].newslink);
-        Serial.println(table[newsmultiplier+1].newslink);
-        Serial.println(table[newsmultiplier+2].newslink);
+        for (uint8_t i = 0; i < numofarticles; i++) {
+          Serial.println(table[newsmultiplier+i].newscur);
+          Serial.println(table[newsmultiplier+i].newslink);
+        }
       #endif
       //File f = SPIFFS.open("/logfile.txt", "a");                                                                                                  /// logfile DEBUG -> If you want to use this, remember the file size enlarges with every call !!!
       //f.printf("%s\n%s\n%s\n%s\n", timeshow, table[newsmultiplier].newscur, table[newsmultiplier+1].newscur, table[newsmultiplier+2].newscur);    /// logfile DEBUG
@@ -1750,11 +1592,13 @@ void getNewsData() {
    } else {
       #ifdef DEBUG 
         Serial.println("Unable to connect to news API");
-      #endif 
+      #endif
    }
-   http.end();   
-  }      
+   http.end();
+  }
+  client.stop();
 }
+
 
 
 
@@ -2268,47 +2112,69 @@ void showSimple() {                                                             
 }
 
  
-void composeNews(uint8_t startPos) {                                                     // composes Strings and sends news to requesting html page
-                                                                                         // is executed for a number of six news only due to ESP8266 memory limitation
-  String bbc[6];                                                                         // startPos defines start position in table[].newscur      
-  String source[2]; 
-  uint8_t t;
-  uint8_t helpcounter = 0;
-  for (t=startPos; t<(startPos+6); t++){
-    String newsline = table[t].newscur;
-     if (t==startPos) {
-      source[0]=newsline.substring(0,newsline.indexOf(':'));
-     }
-    if (t==startPos+3) {
-      source[1]=newsline.substring(0,newsline.indexOf(':'));
-     }
-    String postnews = newsline.substring(newsline.indexOf(':')+1);                                  // cuts News from presenter,eg: "News von Spiegel-Online:"
-    postnews.replace("\"", "\\\"");                                                                 // keeps quotation marks during sending to html page
-    String postlink = table[t].newslink;
-    bbc[helpcounter] = "\"News"+ String(t) +"\":\""+ postnews + "\" , \"NewsURL" + String(t) +"\":\"" + postlink + "\"";
-    #ifdef DEBUG
-      Serial.print("String: ");
-      Serial.print(bbc[helpcounter]);
-      Serial.println(" composed successfully");
-    #endif
-    helpcounter++;
-}
- String temp = "{" + bbc[0] + "," + bbc[1] + "," + bbc[2] + "," + bbc[3] + "," + bbc[4] + "," + bbc[5] + ", \"S1\":\""+ source[0] + "\" , \"S2\":\""+ source[1] + "\"}";
- server.send(200, "application/json", temp);
- #ifdef DEBUG
-  Serial.print("String: ");
-  Serial.print(temp);
-  Serial.println(" sent successfully");
- #endif 
-}
-
 void sendNews(){
-composeNews(0);
+  composeNews(0);
 }
 
 void sendNews2(){
-composeNews(6);
+  composeNews(6);
 }
+
+void composeNews(uint8_t startPos) {                                                     // composes Strings and sends news to requesting html page
+                                                                                         // is executed for a number of six news only due to ESP8266 memory limitation
+  String temp;
+  temp.reserve(1500);                                                                    // reserves memory, prevents heap fragmentation
+  
+  String source[2]; 
+  
+  temp = "{";
+  
+  for (uint8_t t=startPos; t<(startPos+6); t++){
+    String newsline = table[t].newscur;
+    
+    if (t==startPos) {
+      source[0] = newsline.substring(0,newsline.indexOf(':'));
+    }
+    if (t==startPos+3) {
+      source[1] = newsline.substring(0,newsline.indexOf(':'));
+    }
+    
+    String postnews = newsline.substring(newsline.indexOf(':')+1);                       // cuts News from presenter,eg: "News von Spiegel-Online:"
+    postnews.replace("\"", "\\\"");                                                      // keeps quotation marks during sending to html page
+    String postlink = table[t].newslink;
+    
+    temp += "\"News";
+    temp += t;
+    temp += "\":\"";
+    temp += postnews;
+    temp += "\" , \"NewsURL";
+    temp += t;
+    temp += "\":\"";
+    temp += postlink;
+    temp += "\",";
+    
+    #ifdef DEBUG
+      Serial.print("String: News");
+      Serial.print(t);
+      Serial.println(" composed successfully");
+    #endif
+  }
+  
+  temp += " \"S1\":\"";
+  temp += source[0];
+  temp += "\" , \"S2\":\"";
+  temp += source[1];
+  temp += "\"}";
+
+  server.send(200, "application/json", temp);
+  
+  #ifdef DEBUG
+    Serial.print("String: ");
+    Serial.print(temp);
+    Serial.println(" sent successfully");
+  #endif 
+}
+
 
 void showAdvanced (){                                                                               // Sends all messages and enabling values to requesting html page
   String dlf[4];
