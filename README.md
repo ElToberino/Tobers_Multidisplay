@@ -63,4 +63,6 @@ Have you become a Multidisplay enthusiast, and would you like to get even more e
 Do you know how the code works and are you able to set up everything without issues?<br>
 **Then you are qualified to take a look at the new expert version [Tobers Multidisplay XXL](https://github.com/ElToberino/Tobers_Multidisplay_XXL).  🚀** <br>
 <br>
+<img src="showcase/XXL.jpg" width="500">
+<br>
 <br>
