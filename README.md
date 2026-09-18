@@ -55,7 +55,7 @@ Thanks to the many, many other programmers and enthusiasts in the web whose work
 <br>
 <br>
 <br>
-
+<br>
 ## 📢 &nbsp; We're going XXL...<br>
 Have you become a Multidisplay enthusiast, and would you like to get even more exciting features?<br>
 Do you know how the code works and are you able to set up everything without issues?<br>
