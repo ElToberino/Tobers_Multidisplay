@@ -89,7 +89,7 @@
 
 //#define SPOTIFY                                 // works only on ESP32; ESP8266 crashes due to lack of heap on establishing https connection
 
-#define  DEBUG                                  // show debug messages in serial monitor
+//#define  DEBUG                                  // show debug messages in serial monitor
                                                     // NOTES only for ESP8266: - with DEBUG active, in some (special and rare) situations loading weather data can fail due to lack of heap 
 
 
