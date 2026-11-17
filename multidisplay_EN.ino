@@ -3,7 +3,7 @@
 //    TOBERS MULTIDISPLAY
 //    FOR ESP8266 AND ESP32
 //
-//    V 1.4.0 - 18.09.2026
+//    V 1.4.1 - 17.11.2026
 //
 //    *********************************************
 //
@@ -74,8 +74,8 @@
 //
 //    ***************************************************************
 //
-//    CHANGELOG V 1.3.9 -> V 1.4.0:  - change in table structure: ntable for news and wtable for weather instead of maintable
-//                                   --> saves a lot RAM as no more unused weather table slots
+//    CHANGELOG V 1.4.0 -> V 1.4.1:  - fixes
+//                                   - new Spotify redirect uri
 //                                    
 //                                                               
 //    ***************************************************************
@@ -282,7 +282,7 @@ uint8_t enableSpotify = 1;                                           // internal
 const char* clientID = "XXXXXXXXXX";                                      // register your device on https://developer.spotify.com/dashboard/
 const char* clientSecret = "XXXXXXXXXX";
 
-const char* redirectUri = "http://127.0.0.1:80/callback";
+const char* redirectUri = "https://eltoberino.github.io/auth_flow/index.html";
                                                                                                 
 char cert_spotify_account[1800];                                                                // certificate necessary for https connection, loaded from file on starttup. Must be updated if expired. 
                                                                                                 // --> can be found by clicking the lock symbol in address field of your browser calling "accounts.spotify.com"
@@ -1110,7 +1110,7 @@ void getTimeFromServer(){
   time_retry++;
   }
 
-  if (time_retry >=20){
+   if (initial.tm_year == 70){
     #ifdef DEBUG
       Serial.println("Connection to time server failed");
     #endif  
@@ -1604,11 +1604,21 @@ void getNewsData() {
 #ifdef SPOTIFY
 /// SPOTIFY FUNCTIONS ///
 
-void spotiauth() {                        // initiates Spotify authentication process -> for further information see: https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow 
+void spotiauth() {
   #ifdef DEBUG
     Serial.println("First Step: Calling Spotify for one time authentication token...");
   #endif 
-  String firstContact = "https://accounts.spotify.com/de/authorize/?client_id=" + String(clientID) + "&response_type=code&redirect_uri=" + String(redirectUri) + "&scope=user-read-currently-playing";
+  
+  String firstContact;
+  firstContact.reserve(300);  // Pre-allocate
+  firstContact = "https://accounts.spotify.com/de/authorize/?client_id=";
+  firstContact += clientID;
+  firstContact += "&response_type=code&redirect_uri=";
+  firstContact += redirectUri;
+  firstContact += "&scope=user-read-currently-playing";
+  firstContact += "&state=";
+  firstContact += WiFi.localIP().toString();
+  
   server.sendHeader("Location", firstContact);
   server.send(302, "text/plain", "ok");    
 }
@@ -2008,11 +2018,13 @@ void handleList() {                                                             
   File file = root.openNextFile();
   while (file) {
     if (temp != "[") temp += ",";
-    #ifdef ESP_ARDUINO_VERSION                                                                                          // for ESP32 core Version >=2.0.0
-      temp += R"({"name":")" + String(file.name()) + R"(","size":")" + formatBytes(file.size()) + R"("})";
-    #else
-      temp += R"({"name":")" + String(file.name()).substring(1) + R"(","size":")" + formatBytes(file.size()) + R"("})";
-    #endif
+    temp += R"({"name":")";
+    String fName = file.name();
+    if(fName.startsWith("/")) fName = fName.substring(1);
+    temp += fName;
+    temp += R"(","size":")";                                         
+    temp += formatBytes(file.size());                               
+    temp += R"("})";
     file = root.openNextFile();
   }
   temp += R"(,{"usedBytes":")" + formatBytes(SPIFFS.usedBytes() * 1.05) + R"(",)" +              // calculates used memory + additional 5% for safety reasons
